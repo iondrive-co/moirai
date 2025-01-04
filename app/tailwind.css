@@ -2,11 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
+@layer base {
+  html,
+  body {
+    @apply bg-gray-950 text-white;
+  }
+}
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+@layer components {
+  .description-text {
+    @apply text-gray-400 italic cursor-pointer hover:text-gray-300;
+  }
+
+  .dialogue-text {
+    @apply text-white cursor-pointer hover:text-gray-200;
+  }
+
+  .player-text {
+    @apply text-blue-400;
+  }
+
+  .choice-text {
+    @apply cursor-pointer hover:text-gray-200 py-1;
+  }
+
+  .transition-text {
+    @apply text-blue-400 cursor-pointer hover:text-blue-300;
   }
 }

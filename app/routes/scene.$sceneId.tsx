@@ -3,7 +3,7 @@ import { useLoaderData, useNavigate } from "@remix-run/react";
 import { useState, useEffect } from "react";
 import { story } from "~/data/story";
 import type { LoaderFunction } from "@remix-run/cloudflare";
-import type { Step, DialogueStep, DescriptionStep, ChoiceStep, SceneTransitionStep } from "~/data/story";
+import type { Step, DialogueStep, DescriptionStep, ChoiceStep, SceneTransitionStep } from "~/data/story.types";
 
 export async function loader({ params }: Parameters<LoaderFunction>[0]) {
     const scene = story[params.sceneId ?? ''];
@@ -51,7 +51,6 @@ export default function Scene() {
     const [currentStepId, setCurrentStepId] = useState<string>(data.scene.startingStep);
     const [awaitingClick, setAwaitingClick] = useState(true);
 
-    // Reset state when scene changes
     useEffect(() => {
         setHistory([]);
         setCurrentStepId(data.scene.startingStep);
@@ -103,21 +102,19 @@ export default function Scene() {
     if (!currentStep) return null;
 
     return (
-        <div className="min-h-screen bg-gray-100 p-6">
+        <div className="min-h-screen p-6">
             <div className="max-w-2xl mx-auto space-y-6">
-                <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="p-6">
                     {/* History */}
                     <div className="space-y-4">
                         {history.map((item, index) => (
                             <div key={index}>
-                                {item.type === 'description' ? (
-                                    <p className="text-gray-600 italic">{item.text}</p>
-                                ) : item.type === 'action' ? (
-                                    <p className="text-gray-600 italic">{item.text}</p>
+                                {item.type === 'description' || item.type === 'action' ? (
+                                    <p className="description-text">{item.text}</p>
                                 ) : item.isPlayerResponse ? (
-                                    <p className="text-blue-600">You: {addQuotes(item.text)}</p>
+                                    <p className="player-text">You: {addQuotes(item.text)}</p>
                                 ) : (
-                                    <p className="text-gray-800">
+                                    <p className="dialogue-text">
                                         {item.speaker && <span className="font-semibold">{item.speaker}: </span>}
                                         {addQuotes(item.text)}
                                     </p>
@@ -131,7 +128,7 @@ export default function Scene() {
                         {isDescriptionStep(currentStep) && awaitingClick && (
                             <p
                                 onClick={handleProgress}
-                                className="text-gray-600 italic cursor-pointer hover:text-gray-800"
+                                className="description-text"
                             >
                                 {currentStep.text}
                             </p>
@@ -140,7 +137,7 @@ export default function Scene() {
                         {isDialogueStep(currentStep) && awaitingClick && (
                             <p
                                 onClick={handleProgress}
-                                className="text-gray-800 cursor-pointer hover:text-black"
+                                className="dialogue-text"
                             >
                                 <span className="font-semibold">{currentStep.speaker}: </span>
                                 {addQuotes(currentStep.text)}
@@ -148,12 +145,12 @@ export default function Scene() {
                         )}
 
                         {isChoiceStep(currentStep) && (
-                            <div className="text-gray-800">
+                            <div>
                                 {currentStep.choices.map((choice, index) => (
                                     <p
                                         key={index}
                                         onClick={() => handleChoice(choice)}
-                                        className="cursor-pointer hover:text-black py-1"
+                                        className="choice-text"
                                     >
                                         {index + 1}. {choice.isAction ? choice.text : addQuotes(choice.text)}
                                     </p>
@@ -164,7 +161,7 @@ export default function Scene() {
                         {isSceneTransitionStep(currentStep) && (
                             <p
                                 onClick={() => handleSceneTransition(currentStep)}
-                                className="text-blue-600 cursor-pointer hover:text-blue-800"
+                                className="transition-text"
                             >
                                 {currentStep.text}
                             </p>
