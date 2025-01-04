@@ -1,18 +1,18 @@
-import type { MetaFunction , LoaderFunction } from "@remix-run/cloudflare";
+import type { LoaderFunction } from "@remix-run/cloudflare";
 import { redirect } from "@remix-run/cloudflare";
 
-export const meta: MetaFunction = () => {
+export const meta = () => {
   return [
-    { title: "Text Adventure" },
-    { name: "description", content: "Choose your own adventure!" },
+    { title: "Interactive Story" },
+    { name: "description", content: "An interactive story with dialogue choices" },
   ];
 };
 
-// Redirect to the first scene
+// Redirect to the intro scene
 export const loader: LoaderFunction = async () => {
-  return redirect("/scene/scene1");
+  return redirect("/scene/intro");
 };
 
 export default function Index() {
-  return null; // This won't be shown due to redirect
+  return null;
 }
