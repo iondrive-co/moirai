@@ -1,45 +1,62 @@
-export interface StoryVariables {
-    trustLevel?: number;
-    hasMetBefore?: boolean;
-    knowsSecret?: boolean;
+// app/data/story.types.ts
+
+export interface Choice {
+    text: string;
+    next: string;
+    historyText?: string;
+    isAction?: boolean;
 }
 
-export type DialogueStep = {
+export interface BaseStep {
+    text: string;
+}
+
+export interface DialogueStep extends BaseStep {
     type: 'dialogue';
     speaker: string;
-    text: string;
-    next: string;
+    next?: string;
 }
 
-export type DescriptionStep = {
+export interface DescriptionStep extends BaseStep {
     type: 'description';
-    text: string;
-    next: string;
+    next?: string;
 }
 
-export type ChoiceStep = {
+export interface ChoiceStep extends BaseStep {
     type: 'choice';
-    choices: {
-        text: string;           // Text shown in the choice list
-        next: string;
-        historyText?: string;   // Text shown in history (if different from choice text)
-        isAction?: boolean;     // Whether this is an action (no quotes, no "You:")
-        setVariables?: Partial<StoryVariables>;
-        requires?: Partial<StoryVariables>;
-    }[];
+    choices: Choice[];
 }
 
-export type SceneTransitionStep = {
-    type: 'sceneTransition';
-    text: string;
-    nextScene: string;
-    setVariables?: Partial<StoryVariables>;
-    requires?: Partial<StoryVariables>;
-}
+export type Step = DialogueStep | DescriptionStep | ChoiceStep;
 
-export type Step = DialogueStep | DescriptionStep | ChoiceStep | SceneTransitionStep;
-
-export type StoryData = Record<string, {
-    steps: Record<string, Step>;
+export interface Scene {
     startingStep: string;
-}>
+    steps: Record<string, Step>;
+}
+
+export type StoryData = Record<string, Scene>;
+
+// Node data types (for React Flow)
+export interface BaseNodeData {
+    type: string;
+    text: string;
+    stepId: string;
+}
+
+export interface DialogueNodeData extends BaseNodeData {
+    type: 'dialogue';
+    speaker: string;
+    next?: string;
+}
+
+export interface DescriptionNodeData extends BaseNodeData {
+    type: 'description';
+    next?: string;
+}
+
+export interface ChoiceNodeData extends BaseNodeData {
+    type: 'choice';
+    choices: Choice[];
+}
+
+export type StoryNodeData = DialogueNodeData | DescriptionNodeData | ChoiceNodeData;
