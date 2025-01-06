@@ -1,9 +1,15 @@
 import React from 'react';
-import { NodeProps } from 'reactflow';
+import { Handle, Position, NodeProps } from 'reactflow';
 import { DialogueNodeData, DescriptionNodeData, ChoiceNodeData } from '~/data/story.types';
 
 export const DialogueNode: React.FC<NodeProps<DialogueNodeData>> = ({ data }) => (
     <div className="bg-gray-800 border-2 border-blue-500 rounded-lg shadow-lg min-w-[200px] max-w-[300px]">
+        <Handle
+            type="target"
+            position={Position.Top}
+            style={{ background: '#555' }}
+        />
+
         <div className="bg-gray-700 p-2 rounded-t-lg border-b border-blue-500 drag-handle">
             <h3 className="text-sm font-medium text-blue-300">{data.stepId}</h3>
             <p className="text-xs text-blue-400">Speaker: {data.speaker}</p>
@@ -14,11 +20,23 @@ export const DialogueNode: React.FC<NodeProps<DialogueNodeData>> = ({ data }) =>
                 <p className="text-xs text-gray-400 mt-2">Next: {data.next}</p>
             )}
         </div>
+
+        <Handle
+            type="source"
+            position={Position.Bottom}
+            style={{ background: '#555' }}
+        />
     </div>
 );
 
 export const DescriptionNode: React.FC<NodeProps<DescriptionNodeData>> = ({ data }) => (
     <div className="bg-gray-800 border-2 border-green-500 rounded-lg shadow-lg min-w-[200px] max-w-[300px]">
+        <Handle
+            type="target"
+            position={Position.Top}
+            style={{ background: '#555' }}
+        />
+
         <div className="bg-gray-700 p-2 rounded-t-lg border-b border-green-500 drag-handle">
             <h3 className="text-sm font-medium text-green-300">{data.stepId}</h3>
         </div>
@@ -28,11 +46,23 @@ export const DescriptionNode: React.FC<NodeProps<DescriptionNodeData>> = ({ data
                 <p className="text-xs text-gray-400 mt-2">Next: {data.next}</p>
             )}
         </div>
+
+        <Handle
+            type="source"
+            position={Position.Bottom}
+            style={{ background: '#555' }}
+        />
     </div>
 );
 
 export const ChoiceNode: React.FC<NodeProps<ChoiceNodeData>> = ({ data }) => (
     <div className="bg-gray-800 border-2 border-purple-500 rounded-lg shadow-lg min-w-[200px] max-w-[300px]">
+        <Handle
+            type="target"
+            position={Position.Top}
+            style={{ background: '#555' }}
+        />
+
         <div className="bg-gray-700 p-2 rounded-t-lg border-b border-purple-500 drag-handle">
             <h3 className="text-sm font-medium text-purple-300">{data.stepId}</h3>
         </div>
@@ -46,6 +76,12 @@ export const ChoiceNode: React.FC<NodeProps<ChoiceNodeData>> = ({ data }) => (
                 ))}
             </ul>
         </div>
+
+        <Handle
+            type="source"
+            position={Position.Bottom}
+            style={{ background: '#555' }}
+        />
     </div>
 );
 
