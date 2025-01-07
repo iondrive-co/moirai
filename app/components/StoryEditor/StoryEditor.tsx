@@ -1,20 +1,25 @@
 import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow';
 import { useState, useCallback, useEffect } from 'react';
 import 'reactflow/dist/style.css';
-import { initialStoryData } from '~/data/initial-story';
 import type { StoryData, StoryNodeData, Choice, ChoiceStep, DialogueNodeData } from '~/data/story.types';
 import { nodeTypes } from './NodeTypes';
 import { StoryNode, StoryEdge, defaultEdgeOptions } from './types';
 import { calculateNodePosition } from './utils';
+
+const initialStoryData: StoryData = {
+    intro: {
+        startingStep: '',
+        steps: {}
+    }
+};
 
 const StoryEditor = () => {
     const [currentScene, setCurrentScene] = useState('intro');
     const [nodes, setNodes, onNodesChange] = useNodesState<StoryNodeData>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [selectedNode, setSelectedNode] = useState<StoryNode | null>(null);
-    const [storyData, setStoryData] = useState<StoryData>(() => initialStoryData);
+    const [storyData, setStoryData] = useState<StoryData>(initialStoryData);
     const [hasChanges, setHasChanges] = useState(false);
-
     const updateNodesAndEdges = useCallback(() => {
         const newNodes: StoryNode[] = [];
         const newEdges: StoryEdge[] = [];
@@ -163,13 +168,45 @@ const StoryEditor = () => {
         updateNodesAndEdges();
     };
 
+    useEffect(() => {
+        const loadStoryData = async () => {
+            try {
+                const response = await fetch('/api/story-data');
+                if (response.ok) {
+                    const data = await response.json() as StoryData;
+                    setStoryData(data);
+                }
+            } catch (error) {
+                console.error('Error loading story:', error);
+            }
+        };
+        loadStoryData();
+    }, []);
+
+    if (!storyData) {
+        return <div>Loading...</div>;
+    }
+
     const handleSave = async () => {
         try {
-            console.log('Saving story data:', storyData);
+            const response = await fetch('/api/story-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(storyData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json() as { error: string };
+                throw new Error(errorData.error || 'Failed to save story');
+            }
+
+            await response.json();
             setHasChanges(false);
-            // Add actual save implementation
         } catch (error) {
             console.error('Error saving story:', error);
+            alert('Failed to save story: ' + (error instanceof Error ? error.message : 'Unknown error'));
         }
     };
 

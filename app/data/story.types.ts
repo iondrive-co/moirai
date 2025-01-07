@@ -1,5 +1,3 @@
-// app/data/story.types.ts
-
 export interface Choice {
     text: string;
     next: string;

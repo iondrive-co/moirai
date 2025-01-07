@@ -1,7 +1,11 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "aphelion"
-compatibility_date = "2024-05-12"
+compatibility_date = "2025-01-07"
 pages_build_output_dir = "./build/client"
+[[kv_namespaces]]
+binding = "STORY_DATA"
+id = "2ddd94cbf3e440c798e3d5d389b3087c"
+preview_id = "42580160ff984b2e8c01fae89801bc7f"
 
 # Automatically place your workloads in an optimal location to minimize latency.
 # If you are running back-end logic in a Pages Function, running it closer to your back-end infrastructure
