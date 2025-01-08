@@ -1,5 +1,5 @@
 import type { LoaderFunction, ActionFunction } from "@remix-run/cloudflare";
-import {StoryData} from "~/data/story.types";
+import {StoryData} from "~/types";
 
 export const loader: LoaderFunction = async ({ context }) => {
     try {

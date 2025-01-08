@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { DialogueNodeData, DescriptionNodeData, ChoiceNodeData } from '~/data/story.types';
+import { DialogueNodeData, DescriptionNodeData, ChoiceNodeData } from '~/types';
 
 export const DialogueNode: React.FC<NodeProps<DialogueNodeData>> = ({ data }) => (
     <div className="bg-gray-800 border-2 border-blue-500 rounded-lg shadow-lg min-w-[200px] max-w-[300px]">

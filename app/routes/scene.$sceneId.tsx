@@ -1,7 +1,7 @@
 import {useLoaderData, useNavigate} from "@remix-run/react";
 import { useState, useEffect } from "react";
 import type { LoaderFunction } from "@remix-run/cloudflare";
-import type { Step, StoryData, DialogueStep, DescriptionStep, ChoiceStep, SceneTransitionStep } from "~/data/story.types";
+import type { Step, StoryData, DialogueStep, DescriptionStep, ChoiceStep, SceneTransitionStep } from "~/types";
 
 interface LoaderData {
     scene: {
@@ -12,7 +12,7 @@ interface LoaderData {
 
 export const loader: LoaderFunction = async ({ params, context }) => {
     try {
-        const kvNamespace = context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA;
+        const kvNamespace = context.env?.STORY_DATA;
 
         if (!kvNamespace) {
             throw new Error('KV binding not available');
@@ -21,14 +21,14 @@ export const loader: LoaderFunction = async ({ params, context }) => {
         const storyData = await kvNamespace.get('current-story');
 
         if (!storyData) {
-            throw new Response("Story Not Found", { status: 404 });
+            return new Response("Story Not Found", { status: 404 });
         }
 
         const parsedStory = JSON.parse(storyData) as StoryData;
         const scene = parsedStory[params.sceneId ?? ''];
 
         if (!scene) {
-            throw new Response("Scene Not Found", { status: 404 });
+            return new Response("Scene Not Found", { status: 404 });
         }
 
         return { scene };

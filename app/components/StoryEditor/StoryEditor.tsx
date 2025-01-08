@@ -1,7 +1,7 @@
 import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow';
 import { useState, useCallback, useEffect } from 'react';
 import 'reactflow/dist/style.css';
-import type { StoryData, StoryNodeData, Choice, ChoiceStep, DialogueNodeData } from '~/data/story.types';
+import type { StoryData, StoryNodeData, Choice, ChoiceStep, DialogueNodeData } from '~/types';
 import { nodeTypes } from './NodeTypes';
 import { StoryNode, StoryEdge, defaultEdgeOptions } from './types';
 import { calculateNodePosition } from './utils';
@@ -101,7 +101,9 @@ const StoryEditor = () => {
                     { text: 'New Choice', next: params.target as string }
                 ];
             } else if (params.target) {
-                sourceStep.next = params.target;
+                if ('next' in sourceStep && sourceStep.next) {
+                    sourceStep.next = params.target;
+                }
             }
 
             return newData;

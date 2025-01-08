@@ -1,5 +1,5 @@
 import { Edge, Node, MarkerType } from 'reactflow';
-import type { StoryNodeData } from '~/data/story.types';
+import type { StoryNodeData } from '~/types';
 
 interface EdgeData {
 }

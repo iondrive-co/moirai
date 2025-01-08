@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Read and transform the data
-const sourceData = JSON.parse(readFileSync('initial-story.json', 'utf8'));
+const sourceData = JSON.parse(readFileSync('example-story.json', 'utf8'));
 const kvData = sourceData.map(item => ({
     ...item,
     value: JSON.stringify(item.value)
