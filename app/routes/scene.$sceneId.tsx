@@ -1,19 +1,42 @@
-import { json } from "@remix-run/cloudflare";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import {useLoaderData, useNavigate} from "@remix-run/react";
 import { useState, useEffect } from "react";
-import { story } from "~/data/story";
 import type { LoaderFunction } from "@remix-run/cloudflare";
-import type { Step, DialogueStep, DescriptionStep, ChoiceStep, SceneTransitionStep } from "~/data/story.types";
+import type { Step, StoryData, DialogueStep, DescriptionStep, ChoiceStep, SceneTransitionStep } from "~/data/story.types";
 
-export async function loader({ params }: Parameters<LoaderFunction>[0]) {
-    const scene = story[params.sceneId ?? ''];
-
-    if (!scene) {
-        throw new Response("Scene Not Found", { status: 404 });
-    }
-
-    return json({ scene });
+interface LoaderData {
+    scene: {
+        startingStep: string;
+        steps: Record<string, Step>;
+    };
 }
+
+export const loader: LoaderFunction = async ({ params, context }) => {
+    try {
+        const kvNamespace = context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA;
+
+        if (!kvNamespace) {
+            throw new Error('KV binding not available');
+        }
+
+        const storyData = await kvNamespace.get('current-story');
+
+        if (!storyData) {
+            throw new Response("Story Not Found", { status: 404 });
+        }
+
+        const parsedStory = JSON.parse(storyData) as StoryData;
+        const scene = parsedStory[params.sceneId ?? ''];
+
+        if (!scene) {
+            throw new Response("Scene Not Found", { status: 404 });
+        }
+
+        return { scene };
+    } catch (error) {
+        console.error('Error loading scene:', error);
+        throw new Response("Error loading scene", { status: 500 });
+    }
+};
 
 interface HistoryItem {
     type: 'dialogue' | 'description' | 'choice' | 'action';
@@ -45,10 +68,10 @@ function addQuotes(text: string): string {
 }
 
 export default function Scene() {
-    const data = useLoaderData<typeof loader>();
+    const data = useLoaderData<typeof loader>() as LoaderData;
     const navigate = useNavigate();
     const [history, setHistory] = useState<HistoryItem[]>([]);
-    const [currentStepId, setCurrentStepId] = useState<string>(data.scene.startingStep);
+    const [currentStepId, setCurrentStepId] = useState(data.scene.startingStep);
     const [awaitingClick, setAwaitingClick] = useState(true);
 
     useEffect(() => {
@@ -68,13 +91,17 @@ export default function Scene() {
                 speaker: currentStep.speaker,
                 text: currentStep.text
             }]);
-            setCurrentStepId(currentStep.next);
+            if (currentStep.next) {
+                setCurrentStepId(currentStep.next);
+            }
         } else if (isDescriptionStep(currentStep)) {
             setHistory(prev => [...prev, {
                 type: 'description',
                 text: currentStep.text
             }]);
-            setCurrentStepId(currentStep.next);
+            if (currentStep.next) {
+                setCurrentStepId(currentStep.next);
+            }
         }
 
         setAwaitingClick(true);
@@ -126,45 +153,65 @@ export default function Scene() {
                     {/* Current Step */}
                     <div className="mt-4">
                         {isDescriptionStep(currentStep) && awaitingClick && (
-                            <p
+                            <button
                                 onClick={handleProgress}
-                                className="description-text"
+                                className="description-text w-full text-left"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        handleProgress();
+                                    }
+                                }}
                             >
                                 {currentStep.text}
-                            </p>
+                            </button>
                         )}
 
                         {isDialogueStep(currentStep) && awaitingClick && (
-                            <p
+                            <button
                                 onClick={handleProgress}
-                                className="dialogue-text"
+                                className="dialogue-text w-full text-left"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        handleProgress();
+                                    }
+                                }}
                             >
                                 <span className="font-semibold">{currentStep.speaker}: </span>
                                 {addQuotes(currentStep.text)}
-                            </p>
+                            </button>
                         )}
 
                         {isChoiceStep(currentStep) && (
                             <div>
                                 {currentStep.choices.map((choice, index) => (
-                                    <p
+                                    <button
                                         key={index}
                                         onClick={() => handleChoice(choice)}
-                                        className="choice-text"
+                                        className="choice-text w-full text-left"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                handleChoice(choice);
+                                            }
+                                        }}
                                     >
                                         {index + 1}. {choice.isAction ? choice.text : addQuotes(choice.text)}
-                                    </p>
+                                    </button>
                                 ))}
                             </div>
                         )}
 
                         {isSceneTransitionStep(currentStep) && (
-                            <p
+                            <button
                                 onClick={() => handleSceneTransition(currentStep)}
-                                className="transition-text"
+                                className="transition-text w-full text-left"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        handleSceneTransition(currentStep);
+                                    }
+                                }}
                             >
                                 {currentStep.text}
-                            </p>
+                            </button>
                         )}
                     </div>
                 </div>

@@ -25,7 +25,13 @@ export interface ChoiceStep extends BaseStep {
     choices: Choice[];
 }
 
-export type Step = DialogueStep | DescriptionStep | ChoiceStep;
+export type SceneTransitionStep = {
+    type: 'sceneTransition';
+    text: string;
+    nextScene: string;
+}
+
+export type Step = DialogueStep | DescriptionStep | ChoiceStep | SceneTransitionStep;
 
 export interface Scene {
     startingStep: string;
@@ -34,7 +40,6 @@ export interface Scene {
 
 export type StoryData = Record<string, Scene>;
 
-// Node data types (for React Flow)
 export interface BaseNodeData {
     type: string;
     text: string;
@@ -57,4 +62,9 @@ export interface ChoiceNodeData extends BaseNodeData {
     choices: Choice[];
 }
 
-export type StoryNodeData = DialogueNodeData | DescriptionNodeData | ChoiceNodeData;
+export interface SceneTransitionNodeData extends BaseNodeData {
+    type: 'sceneTransition';
+    nextScene: string;
+}
+
+export type StoryNodeData = DialogueNodeData | DescriptionNodeData | ChoiceNodeData | SceneTransitionNodeData;
