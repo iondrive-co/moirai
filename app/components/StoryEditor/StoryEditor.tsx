@@ -122,6 +122,42 @@ const StoryEditor = () => {
         updateNodesAndEdges();
     }, [currentScene, updateNodesAndEdges]);
 
+    const handleNodesDelete = (nodesToDelete: StoryNode[]) => {
+        setStoryData((prev) => {
+            const newData = { ...prev };
+            const scene = newData[currentScene];
+
+            nodesToDelete.forEach((node) => {
+                // Delete the node itself
+                delete scene.steps[node.id];
+
+                // Remove any references to this node from other nodes
+                Object.values(scene.steps).forEach((step) => {
+                    if ('next' in step && step.next === node.id) {
+                        step.next = undefined;
+                    }
+                    if (step.type === 'choice') {
+                        step.choices = step.choices.filter(choice => choice.next !== node.id);
+                    }
+                });
+
+                // If this was the starting step, clear it
+                if (scene.startingStep === node.id) {
+                    scene.startingStep = '';
+                }
+            });
+
+            return newData;
+        });
+
+        // Clear selected node if it was deleted
+        if (selectedNode && nodesToDelete.some(node => node.id === selectedNode.id)) {
+            setSelectedNode(null);
+        }
+
+        setHasChanges(true);
+    };
+
     const onConnect = useCallback((params: Connection) => {
         if (!params.source || !params.target) return;
 
@@ -310,6 +346,7 @@ const StoryEditor = () => {
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
+                        onNodesDelete={handleNodesDelete}
                         nodeTypes={nodeTypes}
                         onNodeClick={(_, node: StoryNode) => {
                             const currentNodeData = storyData[currentScene].steps[node.id];
