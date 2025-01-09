@@ -1,7 +1,7 @@
 import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow';
 import { useState, useCallback, useEffect } from 'react';
 import 'reactflow/dist/style.css';
-import type { StoryData, StoryNodeData, Choice, ChoiceStep, DialogueNodeData } from '~/types';
+import type { StoryData, StoryNodeData, Choice, ChoiceStep, DialogueNodeData, DescriptionNodeData } from '~/types';
 import { nodeTypes } from './NodeTypes';
 import { StoryNode, StoryEdge, defaultEdgeOptions } from './types';
 import { calculateNodePosition } from './utils';
@@ -20,6 +20,7 @@ const StoryEditor = () => {
     const [selectedNode, setSelectedNode] = useState<StoryNode | null>(null);
     const [storyData, setStoryData] = useState<StoryData>(initialStoryData);
     const [hasChanges, setHasChanges] = useState(false);
+
     const updateNodesAndEdges = useCallback(() => {
         const newNodes: StoryNode[] = [];
         const newEdges: StoryEdge[] = [];
@@ -298,6 +299,30 @@ const StoryEditor = () => {
                                 rows={4}
                             />
                         </div>
+
+                        {(selectedNode.data.type === 'dialogue' || selectedNode.data.type === 'description') && (
+                            <div className="space-y-2">
+                                <label htmlFor="nodeNext" className="text-sm font-medium text-gray-300">Next Node</label>
+                                <select
+                                    id="nodeNext"
+                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                    value={(selectedNode.data as DialogueNodeData | DescriptionNodeData).next || ''}
+                                    onChange={(e) => {
+                                        updateNodeData(selectedNode.id, { next: e.target.value || undefined });
+                                    }}
+                                >
+                                    <option value="">None</option>
+                                    {Object.entries(storyData[currentScene].steps)
+                                        .filter(([id]) => id !== selectedNode.id)
+                                        .map(([id, step]) => (
+                                            <option key={id} value={id}>
+                                                {id} ({step.type})
+                                            </option>
+                                        ))}
+                                </select>
+                            </div>
+                        )}
+
                         {selectedNode.data.type === 'dialogue' && (
                             <div className="space-y-2">
                                 <label htmlFor="nodeSpeaker" className="text-sm font-medium text-gray-300">Speaker</label>
@@ -311,12 +336,13 @@ const StoryEditor = () => {
                                 />
                             </div>
                         )}
+
                         {selectedNode.data.type === 'choice' && (
                             <div className="space-y-2">
                                 <label htmlFor="choicesList" className="text-sm font-medium text-gray-300">Choices</label>
                                 <div id="choicesList" className="space-y-2">
                                     {(selectedNode.data as ChoiceStep).choices.map((choice: Choice, index: number) => (
-                                        <div key={index} className="space-y-1">
+                                        <div key={index} className="space-y-2 p-2 border border-gray-600 rounded">
                                             <input
                                                 id={`choice-${index}`}
                                                 className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
@@ -330,6 +356,27 @@ const StoryEditor = () => {
                                                     updateNodeData(selectedNode.id, { choices: newChoices });
                                                 }}
                                             />
+                                            <select
+                                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                value={choice.next || ''}
+                                                onChange={(e) => {
+                                                    const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                    newChoices[index] = {
+                                                        ...choice,
+                                                        next: e.target.value || ''
+                                                    };
+                                                    updateNodeData(selectedNode.id, { choices: newChoices });
+                                                }}
+                                            >
+                                                <option value="">Select next node</option>
+                                                {Object.entries(storyData[currentScene].steps)
+                                                    .filter(([id]) => id !== selectedNode.id)
+                                                    .map(([id, step]) => (
+                                                        <option key={id} value={id}>
+                                                            {id} ({step.type})
+                                                        </option>
+                                                    ))}
+                                            </select>
                                         </div>
                                     ))}
                                 </div>
