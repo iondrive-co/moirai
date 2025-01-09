@@ -73,6 +73,51 @@ const StoryEditor = () => {
         setEdges(newEdges);
     }, [currentScene, storyData, setNodes, setEdges]);
 
+    const updateNodeId = (oldId: string, newId: string) => {
+        if (oldId === newId) return;
+        if (storyData[currentScene].steps[newId]) {
+            alert('A node with this ID already exists');
+            return;
+        }
+
+        setStoryData((prev) => {
+            const newData = { ...prev };
+            const steps = newData[currentScene].steps;
+
+            // Update the node's ID
+            const nodeData = steps[oldId];
+            delete steps[oldId];
+            steps[newId] = nodeData;
+
+            // Update all references to this node
+            Object.values(steps).forEach((step) => {
+                if ('next' in step && step.next === oldId) {
+                    step.next = newId;
+                }
+                if (step.type === 'choice') {
+                    step.choices = step.choices.map(choice =>
+                        choice.next === oldId ? { ...choice, next: newId } : choice
+                    );
+                }
+            });
+
+            if (newData[currentScene].startingStep === oldId) {
+                newData[currentScene].startingStep = newId;
+            }
+
+            return newData;
+        });
+
+        setSelectedNode(prev => prev ? {
+            ...prev,
+            id: newId,
+            data: { ...prev.data, stepId: newId }
+        } : null);
+
+        setHasChanges(true);
+        updateNodesAndEdges();
+    };
+
     useEffect(() => {
         updateNodesAndEdges();
     }, [currentScene, updateNodesAndEdges]);
@@ -288,13 +333,27 @@ const StoryEditor = () => {
                     <div className="space-y-4">
                         <h3 className="font-medium text-white">Edit Node: {selectedNode.data.stepId}</h3>
                         <div className="space-y-2">
+                            <label htmlFor="nodeId" className="text-sm font-medium text-gray-300">Node ID</label>
+                            <input
+                                id="nodeId"
+                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                value={selectedNode.data.stepId}
+                                onChange={(e) => {
+                                    const newId = e.target.value.trim();
+                                    if (newId && newId !== selectedNode.data.stepId) {
+                                        updateNodeId(selectedNode.data.stepId, newId);
+                                    }
+                                }}
+                            />
+                        </div>
+                        <div className="space-y-2">
                             <label htmlFor="nodeText" className="text-sm font-medium text-gray-300">Text</label>
                             <textarea
                                 id="nodeText"
                                 className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
                                 value={selectedNode.data.text}
                                 onChange={(e) => {
-                                    updateNodeData(selectedNode.id, { text: e.target.value });
+                                    updateNodeData(selectedNode.id, {text: e.target.value});
                                 }}
                                 rows={4}
                             />
@@ -302,13 +361,14 @@ const StoryEditor = () => {
 
                         {(selectedNode.data.type === 'dialogue' || selectedNode.data.type === 'description') && (
                             <div className="space-y-2">
-                                <label htmlFor="nodeNext" className="text-sm font-medium text-gray-300">Next Node</label>
+                                <label htmlFor="nodeNext" className="text-sm font-medium text-gray-300">Next
+                                    Node</label>
                                 <select
                                     id="nodeNext"
                                     className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
                                     value={(selectedNode.data as DialogueNodeData | DescriptionNodeData).next || ''}
                                     onChange={(e) => {
-                                        updateNodeData(selectedNode.id, { next: e.target.value || undefined });
+                                        updateNodeData(selectedNode.id, {next: e.target.value || undefined});
                                     }}
                                 >
                                     <option value="">None</option>
@@ -325,13 +385,14 @@ const StoryEditor = () => {
 
                         {selectedNode.data.type === 'dialogue' && (
                             <div className="space-y-2">
-                                <label htmlFor="nodeSpeaker" className="text-sm font-medium text-gray-300">Speaker</label>
+                                <label htmlFor="nodeSpeaker"
+                                       className="text-sm font-medium text-gray-300">Speaker</label>
                                 <input
                                     id="nodeSpeaker"
                                     className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
                                     value={(selectedNode.data as DialogueNodeData).speaker}
                                     onChange={(e) => {
-                                        updateNodeData(selectedNode.id, { speaker: e.target.value });
+                                        updateNodeData(selectedNode.id, {speaker: e.target.value});
                                     }}
                                 />
                             </div>
@@ -339,7 +400,8 @@ const StoryEditor = () => {
 
                         {selectedNode.data.type === 'choice' && (
                             <div className="space-y-2">
-                                <label htmlFor="choicesList" className="text-sm font-medium text-gray-300">Choices</label>
+                                <label htmlFor="choicesList"
+                                       className="text-sm font-medium text-gray-300">Choices</label>
                                 <div id="choicesList" className="space-y-2">
                                     {(selectedNode.data as ChoiceStep).choices.map((choice: Choice, index: number) => (
                                         <div key={index} className="space-y-2 p-2 border border-gray-600 rounded">
@@ -353,7 +415,7 @@ const StoryEditor = () => {
                                                         ...choice,
                                                         text: e.target.value
                                                     };
-                                                    updateNodeData(selectedNode.id, { choices: newChoices });
+                                                    updateNodeData(selectedNode.id, {choices: newChoices});
                                                 }}
                                             />
                                             <select
@@ -365,7 +427,7 @@ const StoryEditor = () => {
                                                         ...choice,
                                                         next: e.target.value || ''
                                                     };
-                                                    updateNodeData(selectedNode.id, { choices: newChoices });
+                                                    updateNodeData(selectedNode.id, {choices: newChoices});
                                                 }}
                                             >
                                                 <option value="">Select next node</option>
