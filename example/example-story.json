@@ -78,6 +78,40 @@
             "text": "You find yourself in a dimly lit tavern. At the corner table sits a hooded figure who seems to be watching you.",
             "next": "stranger_initial_talk"
           }
+        },
+        "nodePositions": {
+          "opening_description": {
+            "x": -502.972580814955,
+            "y": -35.93204954171139
+          },
+          "stranger_initial_talk": {
+            "x": -491.11150123613515,
+            "y": 208.99605980722168
+          },
+          "first_choice": {
+            "x": -451.2441691366372,
+            "y": 425.0806707825176
+          },
+          "mysterious_response": {
+            "x": -460.42308271756553,
+            "y": 695.5933969832423
+          },
+          "perceptive_response": {
+            "x": -134.3026087807886,
+            "y": -15.923269410260673
+          },
+          "lean_forward": {
+            "x": -17.05987750354103,
+            "y": 282.94012249645897
+          },
+          "help_choice": {
+            "x": 380.66690630989825,
+            "y": 309.0821086419072
+          },
+          "help_explanation": {
+            "x": 436.2746540459503,
+            "y": 644.3814961596124
+          }
         }
       },
       "outside_tavern": {
