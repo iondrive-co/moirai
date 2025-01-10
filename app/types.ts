@@ -43,9 +43,15 @@ export type SceneTransitionStep = {
 
 export type Step = DialogueStep | DescriptionStep | ChoiceStep | SceneTransitionStep;
 
+export interface NodePosition {
+    x: number;
+    y: number;
+}
+
 export interface Scene {
     startingStep: string;
     steps: Record<string, Step>;
+    nodePositions?: Record<string, NodePosition>;
 }
 
 export type StoryData = Record<string, Scene>;

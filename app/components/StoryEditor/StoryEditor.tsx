@@ -1,7 +1,14 @@
-import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow';
+import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, Connection, Node } from 'reactflow';
 import { useState, useCallback, useEffect } from 'react';
 import 'reactflow/dist/style.css';
-import type { StoryData, StoryNodeData, Choice, ChoiceStep, DialogueNodeData, DescriptionNodeData } from '~/types';
+import type {
+    StoryData,
+    StoryNodeData,
+    Choice,
+    ChoiceStep,
+    DialogueNodeData,
+    DescriptionNodeData,
+} from '~/types';
 import { nodeTypes } from './NodeTypes';
 import { StoryNode, StoryEdge, defaultEdgeOptions } from './types';
 import { calculateNodePosition } from './utils';
@@ -29,7 +36,8 @@ const StoryEditor = () => {
         if (!scene) return;
 
         Object.entries(scene.steps).forEach(([stepId, step], index) => {
-            const position = calculateNodePosition(index);
+            // Ensure we're using saved positions correctly
+            const position = scene.nodePositions?.[stepId] || calculateNodePosition(index);
 
             const nodeData: StoryNodeData = {
                 ...step,
@@ -72,6 +80,26 @@ const StoryEditor = () => {
         setNodes(newNodes);
         setEdges(newEdges);
     }, [currentScene, storyData, setNodes, setEdges]);
+
+    const onNodeDragStop = useCallback((_: React.MouseEvent, node: Node<StoryNodeData>) => {
+        setStoryData(prev => {
+            const newData = { ...prev };
+            const scene = newData[currentScene];
+
+            if (!scene.nodePositions) {
+                scene.nodePositions = {};
+            }
+
+            scene.nodePositions[node.id] = {
+                x: node.position.x,
+                y: node.position.y
+            };
+
+            return newData;
+        });
+
+        setHasChanges(true);
+    }, [currentScene]);
 
     const updateNodeId = (oldId: string, newId: string) => {
         if (oldId === newId) return;
@@ -194,14 +222,22 @@ const StoryEditor = () => {
         setHasChanges(true);
     }, [setEdges, currentScene]);
 
+
     const updateNodeData = (nodeId: string, newData: Partial<StoryNodeData>) => {
         setStoryData((prev) => {
             const newStoryData = { ...prev };
             const currentStep = newStoryData[currentScene].steps[nodeId];
+            // Keep the existing node positions when updating data
+            const currentNodePositions = newStoryData[currentScene].nodePositions || {};
+
             newStoryData[currentScene].steps[nodeId] = {
                 ...currentStep,
                 ...newData
             } as StoryNodeData;
+
+            // Ensure we keep the node positions
+            newStoryData[currentScene].nodePositions = currentNodePositions;
+
             return newStoryData;
         });
 
@@ -344,6 +380,7 @@ const StoryEditor = () => {
                         nodes={nodes}
                         edges={edges}
                         onNodesChange={onNodesChange}
+                        onNodeDragStop={onNodeDragStop}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
                         onNodesDelete={handleNodesDelete}
