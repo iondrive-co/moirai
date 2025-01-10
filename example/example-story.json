@@ -5,17 +5,6 @@
       "intro": {
         "startingStep": "opening_description",
         "steps": {
-          "opening_description": {
-            "type": "description",
-            "text": "You find yourself in a dimly lit tavern. At a corner table sits a hooded figure who seems to be watching you.",
-            "next": "stranger_initial"
-          },
-          "stranger_initial": {
-            "type": "dialogue",
-            "speaker": "Stranger",
-            "text": "I've been waiting for someone like you.",
-            "next": "first_choice"
-          },
           "first_choice": {
             "type": "choice",
             "text": "What would you like to do?",
@@ -23,12 +12,16 @@
               {
                 "text": "Who are you?",
                 "next": "mysterious_response",
-                "setVariables": { "trustLevel": 1 }
+                "setVariables": {
+                  "trustLevel": 1
+                }
               },
               {
                 "text": "I noticed you watching me.",
                 "next": "perceptive_response",
-                "setVariables": { "trustLevel": 2 }
+                "setVariables": {
+                  "trustLevel": 2
+                }
               }
             ]
           },
@@ -73,6 +66,17 @@
             "type": "sceneTransition",
             "text": "Leave the tavern",
             "nextScene": "outside_tavern"
+          },
+          "stranger_initial_talk": {
+            "type": "dialogue",
+            "speaker": "Stranger",
+            "text": "I've been waiting for someone like you.",
+            "next": "first_choice"
+          },
+          "opening_description": {
+            "type": "description",
+            "text": "You find yourself in a dimly lit tavern. At the corner table sits a hooded figure who seems to be watching you.",
+            "next": "stranger_initial_talk"
           }
         }
       },
@@ -98,7 +102,9 @@
                 "historyText": "You turn around slowly, cautiously facing the direction of the footsteps.",
                 "isAction": true,
                 "next": "face_follower",
-                "requires": { "trustLevel": 2 }
+                "requires": {
+                  "trustLevel": 2
+                }
               },
               {
                 "text": "Start running",

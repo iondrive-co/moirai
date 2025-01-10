@@ -12,6 +12,7 @@
     "typecheck": "tsc",
     "typegen": "wrangler types",
     "load": "node example/load-example.js",
+    "save": "node example/save-example.js",
     "preview": "npm run build && wrangler pages dev --binding STORY_DATA --kv STORY_DATA --local",
     "cf-typegen": "wrangler types"
   },
@@ -44,7 +45,7 @@
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.2.1",
-    "wrangler": "3.100.0"
+    "wrangler": "3.101.0"
   },
   "engines": {
     "node": ">=20.0.0"
