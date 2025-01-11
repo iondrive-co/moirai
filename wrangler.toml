@@ -2,4 +2,3 @@
 name = "morai"
 compatibility_date = "2025-01-07"
 pages_build_output_dir = "./build/client"
-[[kv_namespaces]]
