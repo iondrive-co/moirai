@@ -1,4 +1,4 @@
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import {useLoaderData, useNavigate, useRouteError} from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/cloudflare";
 import { useState, useEffect } from "react";
 import type { Step, StoryData, DialogueStep, DescriptionStep, ChoiceStep, SceneTransitionStep } from "~/types";
@@ -14,32 +14,145 @@ export const loader: LoaderFunction = async ({ params, context }) => {
     try {
         const sceneId = params['*'];
         const kvNamespace = context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA;
+
         if (!kvNamespace) {
-            throw new Response('KV binding not available', { status: 500 });
+            throw new Response(JSON.stringify({
+                error: 'Configuration Error',
+                details: 'Story system is not properly configured'
+            }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
+
         if (!sceneId) {
-            throw new Response('No scene ID provided', { status: 400 });
+            throw new Response(JSON.stringify({
+                error: 'Invalid Request',
+                details: 'No scene ID provided'
+            }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
+
         const storyData = await kvNamespace.get('current-story');
+
         if (!storyData) {
-            throw new Response('Story Not Found', { status: 404 });
+            throw new Response(JSON.stringify({
+                error: 'Story Not Available',
+                details: 'No story data is currently loaded'
+            }), {
+                status: 503,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
-        const parsedStory = JSON.parse(storyData) as StoryData;
-        const scene = parsedStory[sceneId];
-        if (!scene) {
-            throw new Response(`Scene ${sceneId} Not Found`, { status: 404 });
+
+        try {
+            const parsedStory = JSON.parse(storyData) as StoryData;
+            const scene = parsedStory[sceneId];
+
+            if (!scene) {
+                throw new Response(JSON.stringify({
+                    error: 'Scene Not Found',
+                    details: `Scene "${sceneId}" is not available`
+                }), {
+                    status: 404,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+
+            return { scene };
+        } catch (parseError) {
+            throw new Response(JSON.stringify({
+                error: 'Data Error',
+                details: 'Story data is corrupted or in an invalid format'
+            }), {
+                status: 500,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
-        return { scene };
     } catch (error) {
         if (error instanceof Response) {
             throw error;
         }
-        throw new Response(
-            error instanceof Error ? error.message : 'Unknown error',
-            { status: 500 }
-        );
+        throw new Response(JSON.stringify({
+            error: 'Server Error',
+            details: error instanceof Error ? error.message : 'An unexpected error occurred'
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 };
+
+interface ErrorResponse {
+    error: string;
+    details: string;
+}
+
+export function ErrorBoundary() {
+    const error = useRouteError();
+
+    const getErrorContent = async (error: unknown) => {
+        if (error instanceof Response) {
+            try {
+                const data = await error.json() as ErrorResponse;
+                return {
+                    title: data.error || 'Error',
+                    message: data.details || 'An unexpected error occurred',
+                    status: error.status
+                };
+            } catch {
+                return {
+                    title: 'Error',
+                    message: error.statusText || 'An unexpected error occurred',
+                    status: error.status
+                };
+            }
+        }
+
+        return {
+            title: 'Error',
+            message: error instanceof Error ? error.message : 'An unexpected error occurred',
+            status: 500
+        };
+    };
+
+    const [errorContent, setErrorContent] = useState<{
+        title: string;
+        message: string;
+        status: number;
+    }>({
+        title: 'Loading Error',
+        message: 'Processing error details...',
+        status: 500
+    });
+
+    useEffect(() => {
+        getErrorContent(error).then(setErrorContent);
+    }, [error]);
+
+    return (
+        <div className="min-h-screen p-6 bg-gray-900 text-white">
+            <div className="max-w-2xl mx-auto space-y-6">
+                <h1 className="text-2xl font-bold text-red-500">{errorContent.title}</h1>
+                <div className="space-y-4">
+                    <p>{errorContent.message}</p>
+                    {errorContent.status === 503 && (
+                        <div className="mt-4 p-4 bg-gray-800 rounded">
+                            <p>No story data is currently available. If you're an administrator, you can:</p>
+                            <ol className="list-decimal ml-6 mt-2">
+                                <li>Load the example story using npm run story:load-example:prod</li>
+                                <li>Create a new story using the editor locally</li>
+                                <li>Upload your story using npm run story:put:prod</li>
+                            </ol>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 interface HistoryItem {
     type: 'dialogue' | 'description' | 'choice' | 'action';

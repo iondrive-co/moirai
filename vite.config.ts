@@ -24,10 +24,12 @@ export default defineConfig({
           // Base routes that are always included
           route("/", "routes/_index.tsx");
           route("/scene/*", "routes/scene.$sceneId.tsx");
+
           // Only include editor routes in development
           if (!isProduction) {
             route("/edit", "routes/edit.tsx");
             route("/edit/*", "routes/edit/*.tsx");
+            route("/api/story-data", "routes/api.story-data.tsx"); // Include API route only in development
           }
         });
       },
