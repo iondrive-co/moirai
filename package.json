@@ -5,16 +5,19 @@
   "type": "module",
   "scripts": {
     "build": "remix vite:build",
+    "cf-typegen": "wrangler types",
     "deploy": "npm run build && wrangler pages deploy",
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
-    "start": "wrangler pages dev ./build/client",
-    "typecheck": "tsc",
-    "typegen": "wrangler types",
-    "load": "node example/load-example.js",
-    "save": "node example/save-example.js",
     "preview": "npm run build && wrangler pages dev --binding STORY_DATA --kv STORY_DATA --local",
-    "cf-typegen": "wrangler types"
+    "start": "wrangler pages dev ./build/client",
+    "story:load-example": "node scripts/story-manager.js load-example preview",
+    "story:get": "node scripts/story-manager.js get preview",
+    "story:get:prod": "node scripts/story-manager.js get production",
+    "story:put": "node scripts/story-manager.js put preview",
+    "story:put:prod": "node scripts/story-manager.js put production",
+    "typecheck": "tsc",
+    "typegen": "wrangler types"
   },
   "dependencies": {
     "@reactflow/node-resizer": "^2.2.14",

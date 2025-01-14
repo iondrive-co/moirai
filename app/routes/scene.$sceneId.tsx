@@ -1,6 +1,6 @@
-import {useLoaderData, useNavigate} from "@remix-run/react";
-import { useState, useEffect } from "react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/cloudflare";
+import { useState, useEffect } from "react";
 import type { Step, StoryData, DialogueStep, DescriptionStep, ChoiceStep, SceneTransitionStep } from "~/types";
 
 interface LoaderData {
@@ -12,29 +12,32 @@ interface LoaderData {
 
 export const loader: LoaderFunction = async ({ params, context }) => {
     try {
-        const kvNamespace = context.env?.STORY_DATA;
-
+        const sceneId = params['*'];
+        const kvNamespace = context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA;
         if (!kvNamespace) {
-            throw new Error('KV binding not available');
+            throw new Response('KV binding not available', { status: 500 });
         }
-
+        if (!sceneId) {
+            throw new Response('No scene ID provided', { status: 400 });
+        }
         const storyData = await kvNamespace.get('current-story');
-
         if (!storyData) {
-            return new Response("Story Not Found", { status: 404 });
+            throw new Response('Story Not Found', { status: 404 });
         }
-
         const parsedStory = JSON.parse(storyData) as StoryData;
-        const scene = parsedStory[params.sceneId ?? ''];
-
+        const scene = parsedStory[sceneId];
         if (!scene) {
-            return new Response("Scene Not Found", { status: 404 });
+            throw new Response(`Scene ${sceneId} Not Found`, { status: 404 });
         }
-
         return { scene };
     } catch (error) {
-        console.error('Error loading scene:', error);
-        throw new Response("Error loading scene", { status: 500 });
+        if (error instanceof Response) {
+            throw error;
+        }
+        throw new Response(
+            error instanceof Error ? error.message : 'Unknown error',
+            { status: 500 }
+        );
     }
 };
 
@@ -70,6 +73,9 @@ function addQuotes(text: string): string {
 export default function Scene() {
     const data = useLoaderData<typeof loader>() as LoaderData;
     const navigate = useNavigate();
+    if (!data?.scene?.startingStep || !data?.scene?.steps) {
+        throw new Error(`Invalid scene data: ${JSON.stringify(data)}`);
+    }
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [currentStepId, setCurrentStepId] = useState(data.scene.startingStep);
     const [awaitingClick, setAwaitingClick] = useState(true);
