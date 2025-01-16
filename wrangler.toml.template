@@ -6,5 +6,3 @@ pages_build_output_dir = "./build/client"
 binding = "STORY_DATA"
 # Create with wrangler kv:namespace create STORY_DATA
 id = "<YOUR_PRODUCTION_KV_ID>"
-# Create with wrangler kv:namespace create STORY_DATA --preview
-preview_id = "<YOUR_PREVIEW_KV_ID>"

@@ -9,7 +9,7 @@ Before anything else, you will want to create a local and production KV store. C
 wrangler.toml and run the commands in there to generate the two stores. Next, you will need some story data to start
 out with, so load the example story from above into your local KV store with `npm run story:load-example`.
 
-Once these are done you can then run locally with `npm run preview`. The default route is the story view (this is all 
+Once these are done you can then run locally with `npm run run:local`. The default route is the story view (this is all 
 that gets deployed to cloudflare), and the editor can be accessed via /edit. When you work on your own story, you can 
 save it to the (.gitignored) current-story.json with `npm run story:get:local`, and load the contents of that file into 
 your local KV store with `npm run story:put:local`.
