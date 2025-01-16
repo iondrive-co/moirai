@@ -82,7 +82,7 @@ export const loader: LoaderFunction = async ({ params, context }) => {
         }
         throw new Response(JSON.stringify({
             error: 'Server Error',
-            details: error instanceof Error ? error.message : 'An unexpected error occurred',
+            details: error instanceof Error ? error.message : 'An error occurred',
             stack: error instanceof Error ? error.stack : undefined
         }), {
             status: 500,
