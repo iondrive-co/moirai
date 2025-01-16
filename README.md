@@ -11,8 +11,8 @@ out with, so load the example story from above into your local KV store with `np
 
 Once these are done you can then run locally with `npm run preview`. The default route is the story view (this is all 
 that gets deployed to cloudflare), and the editor can be accessed via /edit. When you work on your own story, you can 
-save it to the (.gitignored) current-story.json with `npm run story:get`, and load the contents of that file into your 
-local KV store with `npm run story:put`.
+save it to the (.gitignored) current-story.json with `npm run story:get:local`, and load the contents of that file into 
+your local KV store with `npm run story:put:local`.
 
 Once you are ready to publish, you can use the `story:get:prod` and `story:put:prod` to modify the production KV store,
 which is what you will need to configure your pages app in cloudflare to use. See 

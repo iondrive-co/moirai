@@ -16,25 +16,34 @@ export const loader: LoaderFunction = async ({ params, context }) => {
         const kvNamespace = context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA;
 
         if (!kvNamespace) {
-            throw new Response('Story system is not properly configured', {
+            throw new Response(JSON.stringify({
+                error: 'Configuration Error',
+                details: 'Story system is not properly configured'
+            }), {
                 status: 500,
-                statusText: 'Configuration Error'
+                headers: { 'Content-Type': 'application/json' }
             });
         }
 
         if (!sceneId) {
-            throw new Response('No scene ID provided', {
+            throw new Response(JSON.stringify({
+                error: 'Invalid Request',
+                details: 'No scene ID provided'
+            }), {
                 status: 400,
-                statusText: 'Invalid Request'
+                headers: { 'Content-Type': 'application/json' }
             });
         }
 
         const storyData = await kvNamespace.get('current-story');
 
         if (!storyData) {
-            throw new Response('No story data is currently loaded', {
+            throw new Response(JSON.stringify({
+                error: 'Story Not Available',
+                details: 'No story data is currently loaded'
+            }), {
                 status: 503,
-                statusText: 'Story Not Available'
+                headers: { 'Content-Type': 'application/json' }
             });
         }
 
@@ -43,81 +52,102 @@ export const loader: LoaderFunction = async ({ params, context }) => {
             const scene = parsedStory[sceneId];
 
             if (!scene) {
-                throw new Response(`Scene "${sceneId}" is not available`, {
+                throw new Response(JSON.stringify({
+                    error: 'Scene Not Found',
+                    details: `Scene "${sceneId}" is not available`
+                }), {
                     status: 404,
-                    statusText: 'Scene Not Found'
+                    headers: { 'Content-Type': 'application/json' }
                 });
             }
 
             return { scene };
         } catch (parseError) {
-            throw new Response('Story data is corrupted or in an invalid format', {
+            throw new Response(JSON.stringify({
+                error: 'Data Error',
+                details: 'Story data is corrupted or in an invalid format'
+            }), {
                 status: 500,
-                statusText: 'Data Error'
+                headers: { 'Content-Type': 'application/json' }
             });
         }
     } catch (error) {
         if (error instanceof Response) {
             throw error;
         }
-        throw new Response(
-            error instanceof Error ? error.message : 'An unexpected error occurred',
-            { status: 500 }
-        );
+        throw new Response(JSON.stringify({
+            error: 'Server Error',
+            details: error instanceof Error ? error.message : 'An unexpected error occurred'
+        }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 };
+
+interface ErrorResponse {
+    error: string;
+    details: string;
+}
 
 export function ErrorBoundary() {
     const error = useRouteError();
 
-    let errorMessage = 'An unexpected error occurred';
-    let errorDetails = null;
-    let statusCode = 500;
-
-    if (error instanceof Response) {
-        statusCode = error.status;
-        try {
-            // Try to get the response body synchronously
-            const text = error.bodyUsed ? '' : error.statusText;
-            errorMessage = text || `${error.status} ${error.statusText}`;
-
-            if (error.status === 503) {
-                errorDetails = (
-                    <div className="mt-4 p-4 bg-gray-800 rounded">
-                        <p>No story data is currently available. If you're an administrator, you can:</p>
-                        <ol className="list-decimal ml-6 mt-2">
-                            <li>Load the example story using npm run story:load-example:prod</li>
-                            <li>Create a new story using the editor locally</li>
-                            <li>Upload your story using npm run story:put:prod</li>
-                        </ol>
-                    </div>
-                );
+    const getErrorContent = async (error: unknown) => {
+        if (error instanceof Response) {
+            try {
+                const data = await error.json() as ErrorResponse;
+                return {
+                    title: data.error || 'Error',
+                    message: data.details || 'An unexpected error occurred',
+                    status: error.status
+                };
+            } catch {
+                return {
+                    title: 'Error',
+                    message: error.statusText || 'An unexpected error occurred',
+                    status: error.status
+                };
             }
-        } catch (e) {
-            console.error('Error reading response:', e);
         }
-    } else if (error instanceof Error) {
-        errorMessage = error.message;
-        if (error.stack) {
-            errorDetails = (
-                <pre className="mt-4 p-4 bg-gray-800 rounded overflow-auto text-sm">
-                    {error.stack}
-                </pre>
-            );
-        }
-    } else if (typeof error === 'string') {
-        errorMessage = error;
-    }
+
+        return {
+            title: 'Error',
+            message: error instanceof Error ? error.message : 'An unexpected error occurred',
+            status: 500
+        };
+    };
+
+    const [errorContent, setErrorContent] = useState<{
+        title: string;
+        message: string;
+        status: number;
+    }>({
+        title: 'Loading Error',
+        message: 'Processing error details...',
+        status: 500
+    });
+
+    useEffect(() => {
+        getErrorContent(error).then(setErrorContent);
+    }, [error]);
 
     return (
         <div className="min-h-screen p-6 bg-gray-900 text-white">
             <div className="max-w-2xl mx-auto space-y-6">
-                <h1 className="text-2xl font-bold text-red-500">
-                    {statusCode === 404 ? 'Not Found' : 'Error'}
-                </h1>
+                <h1 className="text-2xl font-bold text-red-500">{errorContent.title}</h1>
                 <div className="space-y-4">
-                    <p>{errorMessage}</p>
-                    {errorDetails}
+                    <p>{errorContent.message}</p>
+                    {errorContent.status === 503 && (
+                        <div className="mt-4 p-4 bg-gray-800 rounded">
+                            <p>No story data is currently available. If you're an administrator, you can:</p>
+                            <ol className="list-decimal ml-6 mt-2">
+                                <li>Load the example story using npm run story:load-example:prod</li>
+                                <li>Create a new story using the editor locally</li>
+                                <li>Upload your story using npm run story:put:prod</li>
+                            </ol>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -12,10 +12,14 @@
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "preview": "npm run build:dev && wrangler pages dev --binding STORY_DATA --kv STORY_DATA --local",
     "start": "wrangler pages dev ./build/client",
-    "story:load-example": "node scripts/story-manager.js load-example preview",
-    "story:get": "node scripts/story-manager.js get preview",
+    "story:load-example:local": "node scripts/story-manager.js load-example local-preview",
+    "story:load-example:preview": "node scripts/story-manager.js load-example preview",
+    "story:load-example:prod": "node scripts/story-manager.js load-example production",
+    "story:get:local": "node scripts/story-manager.js get local-preview",
+    "story:get:preview": "node scripts/story-manager.js get preview",
     "story:get:prod": "node scripts/story-manager.js get production",
-    "story:put": "node scripts/story-manager.js put preview",
+    "story:put:local": "node scripts/story-manager.js put local-preview",
+    "story:put:preview": "node scripts/story-manager.js put preview",
     "story:put:prod": "node scripts/story-manager.js put production",
     "typecheck": "tsc",
     "typegen": "wrangler types"
@@ -49,7 +53,7 @@
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.2.1",
-    "wrangler": "3.101.0"
+    "wrangler": "3.102.0"
   },
   "engines": {
     "node": ">=20.0.0"
