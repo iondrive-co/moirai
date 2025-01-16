@@ -7,30 +7,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const command = process.argv[2];
-const environment = process.argv[3] || 'local-preview';
 
-if (!['load-example', 'get', 'put'].includes(command)) {
-    console.error('Usage: node story-manager.js [load-example|get|put] [production|preview|local-production|local-preview]');
+if (!['get-prod', 'put-prod', 'load-example'].includes(command)) {
+    console.error('Usage: node story-manager.js [get-prod|put-prod|load-example]');
     process.exit(1);
 }
 
-function getFlags(env) {
-    switch (env) {
-        case 'production':
-            return '--preview false';
-        case 'preview':
-            return '--preview';
-        case 'local-production':
-            return '--local';
-        case 'local-preview':
-            return '--preview --local';
-        default:
-            throw new Error(`Unknown environment: ${env}`);
+const TEMP_FILE = join(__dirname, 'temp-story.txt');
+
+function cleanup() {
+    try {
+        if (readFileSync(TEMP_FILE)) {
+            unlinkSync(TEMP_FILE);
+        }
+    } catch (e) {
+        // File doesn't exist, ignore
     }
 }
 
-const flags = getFlags(environment);
-const bindingFlags = `--binding=STORY_DATA ${flags}`.trim();
+// Ensure cleanup on exit
+process.on('exit', cleanup);
+process.on('SIGINT', () => {
+    cleanup();
+    process.exit();
+});
 
 async function loadExampleToKV() {
     const sourceFile = join(__dirname, '..', 'example', 'example-story.json');
@@ -41,60 +41,73 @@ async function loadExampleToKV() {
         value: JSON.stringify(item.value)
     }));
 
-    const tempFile = join(__dirname, 'temp-kv.json');
-    writeFileSync(tempFile, JSON.stringify(kvData, null, 2));
+    writeFileSync(TEMP_FILE, JSON.stringify(kvData, null, 2));
 
     try {
-        const command = `wrangler kv:bulk put ${bindingFlags} ${tempFile}`;
+        const command = `wrangler kv:bulk put --binding=STORY_DATA --local ${TEMP_FILE}`;
         console.log('Executing:', command);
         execSync(command, { stdio: 'inherit' });
-        console.log('Successfully loaded example story to KV');
+        console.log('Successfully loaded example story to local KV');
     } catch (error) {
-        console.error('Error loading KV data:', error);
-    } finally {
-        unlinkSync(tempFile);
+        console.error('Error loading example data:', error);
     }
 }
 
-async function getCurrentStory() {
+async function getProdData() {
     try {
-        const command = `wrangler kv:key get ${bindingFlags} current-story`;
-        console.log('Executing:', command);
-        const result = execSync(command);
-        writeFileSync('current-story.json', result);
-        console.log('Successfully retrieved story data to current-story.json');
+        // Get from prod
+        console.log('Getting production data...');
+        const prodData = execSync('wrangler kv:key get --binding=STORY_DATA current-story').toString();
+
+        // Save to temp file
+        writeFileSync(TEMP_FILE, prodData);
+
+        // Put to local
+        console.log('Writing to local KV...');
+        execSync(`wrangler kv:key put --binding=STORY_DATA --local current-story --path=${TEMP_FILE}`, {
+            stdio: 'inherit'
+        });
+        console.log('Successfully copied production data to local KV');
     } catch (error) {
-        console.error('Error getting story data:', error.message);
+        console.error('Error syncing from production:', error.message);
     }
 }
 
-async function putCurrentStory() {
+async function putProdData() {
     try {
-        const storyData = readFileSync('current-story.json', 'utf-8');
-        const tempFile = 'temp-story.txt';
-        writeFileSync(tempFile, storyData);
-        const command = `wrangler kv:key put ${bindingFlags} current-story @${tempFile}`;
-        console.log('Executing:', command);
-        execSync(command, { stdio: 'inherit' });
-        unlinkSync(tempFile);
-        console.log('Successfully uploaded story data to KV');
+        // Get from local
+        console.log('Getting local data...');
+        const localData = execSync('wrangler kv:key get --binding=STORY_DATA --local current-story').toString();
+
+        // Save to temp file
+        writeFileSync(TEMP_FILE, localData);
+
+        // Put to prod
+        console.log('Writing to production KV...');
+        execSync(`wrangler kv:key put --binding=STORY_DATA current-story --path=${TEMP_FILE}`, {
+            stdio: 'inherit'
+        });
+        console.log('Successfully copied local data to production KV');
     } catch (error) {
-        console.error('Error putting story data:', error.message);
+        console.error('Error syncing to production:', error.message);
     }
 }
 
 async function main() {
-    console.log(`Running command '${command}' for environment '${environment}'`);
-    switch (command) {
-        case 'load-example':
-            await loadExampleToKV();
-            break;
-        case 'get':
-            await getCurrentStory();
-            break;
-        case 'put':
-            await putCurrentStory();
-            break;
+    try {
+        switch (command) {
+            case 'load-example':
+                await loadExampleToKV();
+                break;
+            case 'get-prod':
+                await getProdData();
+                break;
+            case 'put-prod':
+                await putProdData();
+                break;
+        }
+    } finally {
+        cleanup();
     }
 }
 
