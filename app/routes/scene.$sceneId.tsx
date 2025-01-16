@@ -13,18 +13,28 @@ interface LoaderData {
 export const loader: LoaderFunction = async ({ params, context }) => {
     try {
         const sceneId = params['*'];
+        console.log('Context structure:', JSON.stringify({
+            hasEnv: !!context.env,
+            hasCloudflareEnv: !!context.cloudflare?.env,
+            sceneId
+        }));
         const kvNamespace = context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA;
-
         if (!kvNamespace) {
             throw new Response(JSON.stringify({
                 error: 'Configuration Error',
-                details: 'Story system is not properly configured'
+                details: 'KV Namespace not found',
+                context: {
+                    hasEnv: !!context.env,
+                    hasCloudflareEnv: !!context.cloudflare?.env,
+                    hasStoryData: !!(context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA)
+                }
             }), {
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
             });
         }
-
+        const storyData = await kvNamespace.get('current-story');
+        console.log('Story data fetch result:', storyData ? 'Data found' : 'No data found');
         if (!sceneId) {
             throw new Response(JSON.stringify({
                 error: 'Invalid Request',
@@ -34,9 +44,6 @@ export const loader: LoaderFunction = async ({ params, context }) => {
                 headers: { 'Content-Type': 'application/json' }
             });
         }
-
-        const storyData = await kvNamespace.get('current-story');
-
         if (!storyData) {
             throw new Response(JSON.stringify({
                 error: 'Story Not Available',
@@ -46,11 +53,9 @@ export const loader: LoaderFunction = async ({ params, context }) => {
                 headers: { 'Content-Type': 'application/json' }
             });
         }
-
         try {
             const parsedStory = JSON.parse(storyData) as StoryData;
             const scene = parsedStory[sceneId];
-
             if (!scene) {
                 throw new Response(JSON.stringify({
                     error: 'Scene Not Found',
@@ -60,7 +65,6 @@ export const loader: LoaderFunction = async ({ params, context }) => {
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
-
             return { scene };
         } catch (parseError) {
             throw new Response(JSON.stringify({
@@ -72,12 +76,14 @@ export const loader: LoaderFunction = async ({ params, context }) => {
             });
         }
     } catch (error) {
+        console.error('Loader error:', error);
         if (error instanceof Response) {
             throw error;
         }
         throw new Response(JSON.stringify({
             error: 'Server Error',
-            details: error instanceof Error ? error.message : 'An unexpected error occurred'
+            details: error instanceof Error ? error.message : 'An unexpected error occurred',
+            stack: error instanceof Error ? error.stack : undefined
         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
