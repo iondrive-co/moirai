@@ -1,6 +1,6 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "morai"
-compatibility_date = "2025-01-07"
+compatibility_date = "2024-12-30"
 pages_build_output_dir = "./build/client"
 [[kv_namespaces]]
 binding = "STORY_DATA"
