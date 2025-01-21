@@ -15,6 +15,8 @@
     "story:get:prod": "node scripts/story-manager.js get-prod",
     "story:put:prod": "node scripts/story-manager.js put-prod",
     "story:load-example": "node scripts/story-manager.js load-example",
+    "story:backup": "node scripts/story-manager.js backup",
+    "story:load": "node scripts/story-manager.js load",
     "typecheck": "tsc",
     "typegen": "wrangler types"
   },
@@ -53,7 +55,7 @@
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.2.1",
-    "wrangler": "3.103.0"
+    "wrangler": "3.103.2"
   },
   "engines": {
     "node": ">=20.0.0"
