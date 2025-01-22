@@ -20,21 +20,9 @@ export const loader: LoaderFunction = async ({ params, context }) => {
         }));
         const kvNamespace = context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA;
         if (!kvNamespace) {
-            throw new Response(JSON.stringify({
-                error: 'Configuration Error',
-                details: 'KV Namespace not found',
-                context: {
-                    hasEnv: !!context.env,
-                    hasCloudflareEnv: !!context.cloudflare?.env,
-                    hasStoryData: !!(context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA)
-                }
-            }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-            });
+            throw new Error('KV Namespace not found');
         }
         const storyData = await kvNamespace.get('current-story');
-        console.log('Story data fetch result:', storyData ? 'Data found' : 'No data found');
         if (!sceneId) {
             throw new Response(JSON.stringify({
                 error: 'Invalid Request',
@@ -45,49 +33,43 @@ export const loader: LoaderFunction = async ({ params, context }) => {
             });
         }
         if (!storyData) {
-            throw new Response(JSON.stringify({
-                error: 'Story Not Available',
-                details: 'No story data is currently loaded'
-            }), {
-                status: 503,
-                headers: { 'Content-Type': 'application/json' }
-            });
+            return {
+                scene: {
+                    startingStep: 'empty',
+                    steps: {
+                        empty: {
+                            type: 'description',
+                            text: 'No story has been created yet. Please use the editor to create a story.',
+                            next: undefined
+                        }
+                    }
+                }
+            };
         }
         try {
             const parsedStory = JSON.parse(storyData) as StoryData;
             const scene = parsedStory[sceneId];
             if (!scene) {
-                throw new Response(JSON.stringify({
-                    error: 'Scene Not Found',
-                    details: `Scene "${sceneId}" is not available`
-                }), {
-                    status: 404,
-                    headers: { 'Content-Type': 'application/json' }
-                });
+                return {
+                    scene: {
+                        startingStep: 'not_found',
+                        steps: {
+                            not_found: {
+                                type: 'description',
+                                text: `Scene "${sceneId}" was not found. Please check the story structure in the editor.`,
+                                next: undefined
+                            }
+                        }
+                    }
+                };
             }
             return { scene };
         } catch (parseError) {
-            throw new Response(JSON.stringify({
-                error: 'Data Error',
-                details: 'Story data is corrupted or in an invalid format'
-            }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-            });
+            throw new Error('Story data is corrupted or in an invalid format');
         }
     } catch (error) {
         console.error('Loader error:', error);
-        if (error instanceof Response) {
-            throw error;
-        }
-        throw new Response(JSON.stringify({
-            error: 'Server Error',
-            details: error instanceof Error ? error.message : 'An error occurred',
-            stack: error instanceof Error ? error.stack : undefined
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        throw error;
     }
 };
 
