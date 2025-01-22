@@ -2,6 +2,7 @@ import type { PlatformProxy } from "wrangler";
 
 interface Env {
   STORY_DATA: KVNamespace;
+  ENV: string;
 }
 
 type Cloudflare = Omit<PlatformProxy<Env>, "dispose">;

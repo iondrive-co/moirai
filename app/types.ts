@@ -1,13 +1,3 @@
-export interface Env {
-    STORY_DATA: KVNamespace;
-}
-
-declare module "@remix-run/cloudflare" {
-    interface AppLoadContext {
-        env: Env;
-    }
-}
-
 export interface Choice {
     text: string;
     next: string;

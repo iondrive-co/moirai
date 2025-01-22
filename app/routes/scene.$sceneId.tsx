@@ -14,9 +14,11 @@ interface LoaderData {
 export const loader: LoaderFunction = async ({ params, context }) => {
     try {
         const sceneId = params['*'];
+        const isDevelopment = context.env.ENV === 'development';
         console.log('Context structure:', JSON.stringify({
             hasEnv: !!context.env,
             hasCloudflareEnv: !!context.cloudflare?.env,
+            envValue: context.env.ENV,
             sceneId
         }));
         const kvNamespace = context.env?.STORY_DATA || context.cloudflare?.env?.STORY_DATA;
@@ -24,7 +26,6 @@ export const loader: LoaderFunction = async ({ params, context }) => {
             throw new Error('KV Namespace not found');
         }
         const storyData = await kvNamespace.get('current-story');
-        const isDevelopment = process.env.NODE_ENV !== "production";
         if (!sceneId) {
             throw new Response(JSON.stringify({
                 error: 'Invalid Request',
