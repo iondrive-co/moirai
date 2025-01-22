@@ -24,7 +24,7 @@ export const loader: LoaderFunction = async ({ params, context }) => {
             throw new Error('KV Namespace not found');
         }
         const storyData = await kvNamespace.get('current-story');
-        const isNotProduction = process.env.NODE_ENV !== "production";
+        const isDevelopment = process.env.NODE_ENV !== "production";
         if (!sceneId) {
             throw new Response(JSON.stringify({
                 error: 'Invalid Request',
@@ -46,7 +46,7 @@ export const loader: LoaderFunction = async ({ params, context }) => {
                         }
                     }
                 },
-                isNotProduction
+                isDevelopment
             };
         }
         try {
@@ -64,10 +64,10 @@ export const loader: LoaderFunction = async ({ params, context }) => {
                             }
                         }
                     },
-                    isNotProduction
+                    isDevelopment
                 };
             }
-            return { scene };
+            return { scene, isDevelopment };
         } catch (parseError) {
             throw new Error('Story data is corrupted or in an invalid format');
         }
@@ -177,7 +177,7 @@ function addQuotes(text: string): string {
 
 export default function Scene() {
     const data = useLoaderData<typeof loader>() as LoaderData;
-    const isDevelopment = useLoaderData<typeof loader>() as LoaderData;
+    const { isDevelopment } = data;
     const navigate = useNavigate();
     if (!data?.scene?.startingStep || !data?.scene?.steps) {
         throw new Error(`Invalid scene data: ${JSON.stringify(data)}`);
