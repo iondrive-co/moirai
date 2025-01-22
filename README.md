@@ -15,8 +15,3 @@ use `story:put:prod` to push it to the production KV store, and `story:get:prod`
 into local if you want to overwrite the local store. You will need to configure your pages app in cloudflare to use 
 these, see [here](https://developers.cloudflare.com/pages/framework-guides/deploy-a-remix-site/)
 
-TODO:
-
- - Link to editor in view locally only
- - Don't throw an error when there is no data in the KV store
-

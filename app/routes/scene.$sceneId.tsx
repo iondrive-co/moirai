@@ -8,6 +8,7 @@ interface LoaderData {
         startingStep: string;
         steps: Record<string, Step>;
     };
+    isDevelopment: boolean;
 }
 
 export const loader: LoaderFunction = async ({ params, context }) => {
@@ -23,6 +24,7 @@ export const loader: LoaderFunction = async ({ params, context }) => {
             throw new Error('KV Namespace not found');
         }
         const storyData = await kvNamespace.get('current-story');
+        const isNotProduction = process.env.NODE_ENV !== "production";
         if (!sceneId) {
             throw new Response(JSON.stringify({
                 error: 'Invalid Request',
@@ -43,7 +45,8 @@ export const loader: LoaderFunction = async ({ params, context }) => {
                             next: undefined
                         }
                     }
-                }
+                },
+                isNotProduction
             };
         }
         try {
@@ -60,7 +63,8 @@ export const loader: LoaderFunction = async ({ params, context }) => {
                                 next: undefined
                             }
                         }
-                    }
+                    },
+                    isNotProduction
                 };
             }
             return { scene };
@@ -173,6 +177,7 @@ function addQuotes(text: string): string {
 
 export default function Scene() {
     const data = useLoaderData<typeof loader>() as LoaderData;
+    const isDevelopment = useLoaderData<typeof loader>() as LoaderData;
     const navigate = useNavigate();
     if (!data?.scene?.startingStep || !data?.scene?.steps) {
         throw new Error(`Invalid scene data: ${JSON.stringify(data)}`);
@@ -238,6 +243,16 @@ export default function Scene() {
     return (
         <div className="min-h-screen p-6">
             <div className="max-w-2xl mx-auto space-y-6">
+                {isDevelopment && (
+                    <div className="fixed top-4 right-4">
+                        <button
+                            onClick={() => navigate('/edit')}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                            Open Editor
+                        </button>
+                    </div>
+                )}
                 <div className="p-6">
                     {/* History */}
                     <div className="space-y-4">

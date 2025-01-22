@@ -29,7 +29,7 @@ export default defineConfig({
           if (!isProduction) {
             route("/edit", "routes/edit.tsx");
             route("/edit/*", "routes/edit/*.tsx");
-            route("/api/story-data", "routes/api.story-data.tsx"); // Include API route only in development
+            route("/api/story-data", "routes/api.story-data.tsx");
           }
         });
       },
