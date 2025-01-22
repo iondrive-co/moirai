@@ -263,24 +263,32 @@ const StoryEditor = () => {
 
         setStoryData((prev) => {
             const newData = { ...prev };
+            const scene = newData[currentScene];
+            const isFirstNode = Object.keys(scene.steps).length === 0;
+
             if (type === 'dialogue') {
-                newData[currentScene].steps[newId] = {
+                scene.steps[newId] = {
                     type: 'dialogue',
                     text: 'New dialogue',
                     speaker: 'Speaker'
                 };
             } else if (type === 'choice') {
-                newData[currentScene].steps[newId] = {
+                scene.steps[newId] = {
                     type: 'choice',
                     text: 'Make your choice',
-                    choices: []
+                    choices: [{ text: 'New Choice', next: '' }]
                 };
             } else {
-                newData[currentScene].steps[newId] = {
+                scene.steps[newId] = {
                     type: 'description',
                     text: 'New description'
                 };
             }
+
+            if (isFirstNode) {
+                scene.startingStep = newId;
+            }
+
             return newData;
         });
 
@@ -345,6 +353,29 @@ const StoryEditor = () => {
                             <option key={scene} value={scene}>{scene}</option>
                         ))}
                     </select>
+                    <label htmlFor="startingStep" className="text-white ml-4">Starting Step:</label>
+                    <select
+                        id="startingStep"
+                        value={storyData[currentScene].startingStep}
+                        onChange={(e) => {
+                            setStoryData((prev) => ({
+                                ...prev,
+                                [currentScene]: {
+                                    ...prev[currentScene],
+                                    startingStep: e.target.value
+                                }
+                            }));
+                            setHasChanges(true);
+                        }}
+                        className="px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded min-w-[200px]"
+                    >
+                        <option value="">Select Starting Step</option>
+                        {Object.entries(storyData[currentScene].steps).map(([id, step]) => (
+                            <option key={id} value={id}>
+                                {id} ({step.type})
+                            </option>
+                        ))}
+                    </select>
                     <button
                         onClick={() => addNewNode('dialogue')}
                         className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -389,7 +420,7 @@ const StoryEditor = () => {
                             const currentNodeData = storyData[currentScene].steps[node.id];
                             setSelectedNode({
                                 ...node,
-                                data: { ...currentNodeData, stepId: node.id }
+                                data: {...currentNodeData, stepId: node.id}
                             });
                         }}
                         deleteKeyCode="Delete"
