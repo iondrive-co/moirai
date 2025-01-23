@@ -511,7 +511,7 @@ const StoryEditor = () => {
                                     <button
                                         onClick={() => {
                                             const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                            newChoices.push({ text: 'New Choice', next: '' });
+                                            newChoices.push({ text: 'New Choice', next: '', historyText: '' });
                                             updateNodeData(selectedNode.id, { choices: newChoices });
                                         }}
                                         className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
@@ -535,40 +535,68 @@ const StoryEditor = () => {
                                                     Remove
                                                 </button>
                                             </div>
-                                            <input
-                                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                                value={choice.text}
-                                                onChange={(e) => {
-                                                    const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                    newChoices[index] = {
-                                                        ...choice,
-                                                        text: e.target.value
-                                                    };
-                                                    updateNodeData(selectedNode.id, { choices: newChoices });
-                                                }}
-                                                placeholder="Choice text"
-                                            />
-                                            <select
-                                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                                value={choice.next || ''}
-                                                onChange={(e) => {
-                                                    const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                    newChoices[index] = {
-                                                        ...choice,
-                                                        next: e.target.value
-                                                    };
-                                                    updateNodeData(selectedNode.id, { choices: newChoices });
-                                                }}
-                                            >
-                                                <option value="">Select next node</option>
-                                                {Object.entries(storyData[currentScene].steps)
-                                                    .filter(([id]) => id !== selectedNode.id)
-                                                    .map(([id, step]) => (
-                                                        <option key={id} value={id}>
-                                                            {id} ({step.type})
-                                                        </option>
-                                                    ))}
-                                            </select>
+
+                                            {/* Choice Text */}
+                                            <div className="space-y-1">
+                                                <label className="text-xs text-gray-400">Choice Text (shown in choices)</label>
+                                                <input
+                                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                    value={choice.text}
+                                                    onChange={(e) => {
+                                                        const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                        newChoices[index] = {
+                                                            ...choice,
+                                                            text: e.target.value
+                                                        };
+                                                        updateNodeData(selectedNode.id, { choices: newChoices });
+                                                    }}
+                                                    placeholder="Choice text"
+                                                />
+                                            </div>
+
+                                            {/* History Text */}
+                                            <div className="space-y-1">
+                                                <label className="text-xs text-gray-400">History Text (shown in story)</label>
+                                                <input
+                                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                    value={choice.historyText || ''}
+                                                    onChange={(e) => {
+                                                        const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                        newChoices[index] = {
+                                                            ...choice,
+                                                            historyText: e.target.value || undefined
+                                                        };
+                                                        updateNodeData(selectedNode.id, { choices: newChoices });
+                                                    }}
+                                                    placeholder="Optional: Custom text to show in history"
+                                                />
+                                            </div>
+
+                                            {/* Next Node Selection */}
+                                            <div className="space-y-1">
+                                                <label className="text-xs text-gray-400">Next Step</label>
+                                                <select
+                                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                    value={choice.next || ''}
+                                                    onChange={(e) => {
+                                                        const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                        newChoices[index] = {
+                                                            ...choice,
+                                                            next: e.target.value
+                                                        };
+                                                        updateNodeData(selectedNode.id, { choices: newChoices });
+                                                    }}
+                                                >
+                                                    <option value="">Select next node</option>
+                                                    {Object.entries(storyData[currentScene].steps)
+                                                        .filter(([id]) => id !== selectedNode.id)
+                                                        .map(([id, step]) => (
+                                                            <option key={id} value={id}>
+                                                                {id} ({step.type})
+                                                            </option>
+                                                        ))}
+                                                </select>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
