@@ -508,44 +508,76 @@ const StoryEditor = () => {
                                 <label htmlFor="choicesList"
                                        className="text-sm font-medium text-gray-300">Choices</label>
                                 <div id="choicesList" className="space-y-2">
-                                    {(selectedNode.data as ChoiceStep).choices.map((choice: Choice, index: number) => (
-                                        <div key={index} className="space-y-2 p-2 border border-gray-600 rounded">
-                                            <input
-                                                id={`choice-${index}`}
-                                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                                value={choice.text}
-                                                onChange={(e) => {
-                                                    const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                    newChoices[index] = {
-                                                        ...choice,
-                                                        text: e.target.value
-                                                    };
-                                                    updateNodeData(selectedNode.id, {choices: newChoices});
-                                                }}
-                                            />
-                                            <select
-                                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                                value={choice.next || ''}
-                                                onChange={(e) => {
-                                                    const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                    newChoices[index] = {
-                                                        ...choice,
-                                                        next: e.target.value || ''
-                                                    };
-                                                    updateNodeData(selectedNode.id, {choices: newChoices});
-                                                }}
-                                            >
-                                                <option value="">Select next node</option>
-                                                {Object.entries(storyData[currentScene].steps)
-                                                    .filter(([id]) => id !== selectedNode.id)
-                                                    .map(([id, step]) => (
-                                                        <option key={id} value={id}>
-                                                            {id} ({step.type})
-                                                        </option>
-                                                    ))}
-                                            </select>
+                                    {selectedNode?.data.type === 'choice' && (
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <h4 className="text-sm font-medium text-gray-300">Choices</h4>
+                                                <button
+                                                    onClick={() => {
+                                                        const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                        newChoices.push({ text: 'New Choice', next: '' });
+                                                        updateNodeData(selectedNode.id, { choices: newChoices });
+                                                    }}
+                                                    className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
+                                                >
+                                                    Add Choice
+                                                </button>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {(selectedNode.data as ChoiceStep).choices.map((choice, index) => (
+                                                    <div key={index} className="space-y-2 p-2 border border-gray-600 rounded">
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-sm text-gray-400">Choice {index + 1}</span>
+                                                            <button
+                                                                onClick={() => {
+                                                                    const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                                    newChoices.splice(index, 1);
+                                                                    updateNodeData(selectedNode.id, { choices: newChoices });
+                                                                }}
+                                                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                        <input
+                                                            className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                            value={choice.text}
+                                                            onChange={(e) => {
+                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                                newChoices[index] = {
+                                                                    ...choice,
+                                                                    text: e.target.value
+                                                                };
+                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                            }}
+                                                            placeholder="Choice text"
+                                                        />
+                                                        <select
+                                                            className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                            value={choice.next || ''}
+                                                            onChange={(e) => {
+                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                                newChoices[index] = {
+                                                                    ...choice,
+                                                                    next: e.target.value
+                                                                };
+                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                            }}
+                                                        >
+                                                            <option value="">Select next node</option>
+                                                            {Object.entries(storyData[currentScene].steps)
+                                                                .filter(([id]) => id !== selectedNode.id)
+                                                                .map(([id, step]) => (
+                                                                    <option key={id} value={id}>
+                                                                        {id} ({step.type})
+                                                                    </option>
+                                                                ))}
+                                                        </select>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             </div>
                         )}
