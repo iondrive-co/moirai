@@ -2,7 +2,16 @@ export interface Choice {
     text: string;
     next: string;
     historyText?: string;
-    isAction?: boolean;
+    isDialogue?: boolean;
+    historyIsDialogue?: boolean;
+}
+
+export interface HistoryItem {
+    type: 'dialogue' | 'description' | 'choice';
+    speaker?: string;
+    text: string;
+    isPlayerResponse?: boolean;
+    isDialogue?: boolean;
 }
 
 export interface BaseStep {

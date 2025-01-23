@@ -1,7 +1,15 @@
 import {useLoaderData, useNavigate, useRouteError} from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/cloudflare";
 import { useState, useEffect } from "react";
-import type { Step, StoryData, DialogueStep, DescriptionStep, ChoiceStep, SceneTransitionStep } from "~/types";
+import type {
+    Step,
+    StoryData,
+    DialogueStep,
+    DescriptionStep,
+    ChoiceStep,
+    SceneTransitionStep,
+    HistoryItem
+} from "~/types";
 
 interface LoaderData {
     scene: {
@@ -133,7 +141,7 @@ export function ErrorBoundary() {
                     <p>{errorContent.message}</p>
                     {errorContent.status === 503 && (
                         <div className="mt-4 p-4 bg-gray-800 rounded">
-                            <p>No story data is currently available. If you're an administrator, you can:</p>
+                            <p>No story data is currently available. Locally you can:</p>
                             <ol className="list-decimal ml-6 mt-2">
                                 <li>Load the example story using npm run story:load-example:prod</li>
                                 <li>Create a new story using the editor locally</li>
@@ -145,13 +153,6 @@ export function ErrorBoundary() {
             </div>
         </div>
     );
-}
-
-interface HistoryItem {
-    type: 'dialogue' | 'description' | 'choice' | 'action';
-    speaker?: string;
-    text: string;
-    isPlayerResponse?: boolean;
 }
 
 function isDialogueStep(step: Step): step is DialogueStep {
@@ -220,14 +221,17 @@ export default function Scene() {
         setAwaitingClick(true);
     };
 
-    const handleChoice = (choice: { text: string; next: string; historyText?: string; isAction?: boolean }) => {
-        const historyItem: HistoryItem = choice.isAction ? {
-            type: 'action',
-            text: choice.historyText || choice.text
-        } : {
+    const handleChoice = (choice: {
+        text: string;
+        next: string;
+        historyText?: string;
+        isDialogue?: boolean;
+    }) => {
+        const historyItem: HistoryItem = {
             type: 'choice',
             text: choice.historyText || choice.text,
-            isPlayerResponse: true
+            isPlayerResponse: true,
+            isDialogue: choice.isDialogue
         };
 
         setHistory(prev => [...prev, historyItem]);
@@ -259,14 +263,20 @@ export default function Scene() {
                     <div className="space-y-4">
                         {history.map((item, index) => (
                             <div key={index}>
-                                {item.type === 'description' || item.type === 'action' ? (
+                                {item.type === 'description' ? (
                                     <p className="description-text">{item.text}</p>
                                 ) : item.isPlayerResponse ? (
-                                    <p className="player-text">You: {addQuotes(item.text)}</p>
+                                    <p className="player-text">
+                                        {item.isDialogue ? (
+                                            <>You: &ldquo;{item.text}&rdquo;</>
+                                        ) : (
+                                            item.text
+                                        )}
+                                    </p>
                                 ) : (
                                     <p className="dialogue-text">
                                         {item.speaker && <span className="font-semibold">{item.speaker}: </span>}
-                                        {addQuotes(item.text)}
+                                        &ldquo;{item.text}&rdquo;
                                     </p>
                                 )}
                             </div>
@@ -305,21 +315,30 @@ export default function Scene() {
                         )}
 
                         {isChoiceStep(currentStep) && (
-                            <div>
-                                {currentStep.choices.map((choice, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => handleChoice(choice)}
-                                        className="choice-text w-full text-left"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                handleChoice(choice);
-                                            }
-                                        }}
-                                    >
-                                        {index + 1}. {choice.isAction ? choice.text : addQuotes(choice.text)}
-                                    </button>
-                                ))}
+                            <div className="space-y-2">
+                                {currentStep.choices.map((choice, index) => {
+                                    const displayText = choice.isDialogue ?
+                                        <>&ldquo;{choice.text}&rdquo;</> :
+                                        choice.text;
+
+                                    return (
+                                        <button
+                                            key={index}
+                                            onClick={() => {
+                                                const historyText = choice.historyText || choice.text;
+                                                handleChoice({
+                                                    text: choice.text,
+                                                    next: choice.next,
+                                                    historyText: historyText,
+                                                    isDialogue: choice.historyIsDialogue ?? choice.isDialogue
+                                                });
+                                            }}
+                                            className="choice-text w-full text-left"
+                                        >
+                                            {`${index + 1}. `}{displayText}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
 

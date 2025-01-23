@@ -70,8 +70,23 @@ export const ChoiceNode: React.FC<NodeProps<ChoiceNodeData>> = ({ data }) => (
             <ul className="text-sm list-disc pl-4">
                 {data.choices?.map((choice, index) => (
                     <li key={index} className="mb-2">
-                        <div className="text-white whitespace-pre-wrap">{choice.text}</div>
-                        <div className="text-xs text-gray-400">→ {choice.next}</div>
+                        <div>
+                            <div className="text-white whitespace-pre-wrap">
+                                {choice.isDialogue ? `"${choice.text}"` : choice.text}
+                                <span className="text-purple-300 text-xs ml-1">
+                                    ({choice.isDialogue ? 'dialogue' : 'descriptive'})
+                                </span>
+                            </div>
+                            {choice.historyText && (
+                                <div className="text-gray-400 text-xs italic ml-2">
+                                    History: {choice.historyIsDialogue ? `"${choice.historyText}"` : choice.historyText}
+                                    <span className="text-purple-300 ml-1">
+                                        ({choice.historyIsDialogue ? 'dialogue' : 'descriptive'})
+                                    </span>
+                                </div>
+                            )}
+                            <div className="text-xs text-gray-400">→ {choice.next}</div>
+                        </div>
                     </li>
                 ))}
             </ul>

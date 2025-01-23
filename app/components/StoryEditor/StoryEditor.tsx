@@ -503,7 +503,6 @@ const StoryEditor = () => {
                                 />
                             </div>
                         )}
-
                         {selectedNode?.data.type === 'choice' && (
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center">
@@ -511,7 +510,12 @@ const StoryEditor = () => {
                                     <button
                                         onClick={() => {
                                             const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                            newChoices.push({ text: 'New Choice', next: '', historyText: '' });
+                                            newChoices.push({
+                                                text: 'New Choice',
+                                                next: '',
+                                                isDialogue: false,
+                                                historyIsDialogue: false
+                                            });
                                             updateNodeData(selectedNode.id, { choices: newChoices });
                                         }}
                                         className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
@@ -519,11 +523,11 @@ const StoryEditor = () => {
                                         Add Choice
                                     </button>
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-4">
                                     {(selectedNode.data as ChoiceStep).choices.map((choice, index) => (
-                                        <div key={index} className="space-y-2 p-2 border border-gray-600 rounded">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-sm text-gray-400">Choice {index + 1}</span>
+                                        <div key={index} className="space-y-2 p-3 border border-gray-600 rounded">
+                                            <div className="flex justify-between items-center border-b border-gray-700 pb-2">
+                                                <span className="text-sm font-medium text-gray-300">Choice {index + 1}</span>
                                                 <button
                                                     onClick={() => {
                                                         const newChoices = [...(selectedNode.data as ChoiceStep).choices];
@@ -536,45 +540,137 @@ const StoryEditor = () => {
                                                 </button>
                                             </div>
 
-                                            {/* Choice Text */}
-                                            <div className="space-y-1">
-                                                <label className="text-xs text-gray-400">Choice Text (shown in choices)</label>
-                                                <input
-                                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                                    value={choice.text}
-                                                    onChange={(e) => {
-                                                        const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                        newChoices[index] = {
-                                                            ...choice,
-                                                            text: e.target.value
-                                                        };
-                                                        updateNodeData(selectedNode.id, { choices: newChoices });
-                                                    }}
-                                                    placeholder="Choice text"
-                                                />
+                                            {/* Choice Text Section */}
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-gray-300">Choice Display</label>
+
+                                                {/* Choice Text Input */}
+                                                <div className="space-y-1">
+                                                    <label className="text-xs text-gray-400">Text</label>
+                                                    <input
+                                                        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                        value={choice.text}
+                                                        onChange={(e) => {
+                                                            const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                            newChoices[index] = {
+                                                                ...choice,
+                                                                text: e.target.value
+                                                            };
+                                                            updateNodeData(selectedNode.id, { choices: newChoices });
+                                                        }}
+                                                        placeholder="Text shown in choice button"
+                                                    />
+                                                </div>
+
+                                                {/* Choice Display Type */}
+                                                <div className="space-y-1">
+                                                    <label className="text-xs text-gray-400">Display Type</label>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            className={`flex-1 px-3 py-1.5 rounded text-sm ${
+                                                                choice.isDialogue
+                                                                    ? 'bg-blue-600 text-white'
+                                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                            }`}
+                                                            onClick={() => {
+                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                                newChoices[index] = {
+                                                                    ...choice,
+                                                                    isDialogue: true
+                                                                };
+                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                            }}
+                                                        >
+                                                            Dialogue
+                                                        </button>
+                                                        <button
+                                                            className={`flex-1 px-3 py-1.5 rounded text-sm ${
+                                                                !choice.isDialogue
+                                                                    ? 'bg-blue-600 text-white'
+                                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                            }`}
+                                                            onClick={() => {
+                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                                newChoices[index] = {
+                                                                    ...choice,
+                                                                    isDialogue: false
+                                                                };
+                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                            }}
+                                                        >
+                                                            Descriptive
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            {/* History Text */}
-                                            <div className="space-y-1">
-                                                <label className="text-xs text-gray-400">History Text (shown in story)</label>
-                                                <input
-                                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                                    value={choice.historyText || ''}
-                                                    onChange={(e) => {
-                                                        const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                        newChoices[index] = {
-                                                            ...choice,
-                                                            historyText: e.target.value || undefined
-                                                        };
-                                                        updateNodeData(selectedNode.id, { choices: newChoices });
-                                                    }}
-                                                    placeholder="Optional: Custom text to show in history"
-                                                />
+                                            {/* History Text Section */}
+                                            <div className="space-y-2 mt-4">
+                                                <label className="text-sm font-medium text-gray-300">History Entry</label>
+
+                                                {/* History Text Input */}
+                                                <div className="space-y-1">
+                                                    <label className="text-xs text-gray-400">Text (optional)</label>
+                                                    <input
+                                                        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                        value={choice.historyText || ''}
+                                                        onChange={(e) => {
+                                                            const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                            newChoices[index] = {
+                                                                ...choice,
+                                                                historyText: e.target.value || undefined
+                                                            };
+                                                            updateNodeData(selectedNode.id, { choices: newChoices });
+                                                        }}
+                                                        placeholder="Custom text for history (leave empty to use choice text)"
+                                                    />
+                                                </div>
+
+                                                {/* History Display Type */}
+                                                <div className="space-y-1">
+                                                    <label className="text-xs text-gray-400">Display Type</label>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            className={`flex-1 px-3 py-1.5 rounded text-sm ${
+                                                                choice.historyIsDialogue
+                                                                    ? 'bg-blue-600 text-white'
+                                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                            }`}
+                                                            onClick={() => {
+                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                                newChoices[index] = {
+                                                                    ...choice,
+                                                                    historyIsDialogue: true
+                                                                };
+                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                            }}
+                                                        >
+                                                            Dialogue
+                                                        </button>
+                                                        <button
+                                                            className={`flex-1 px-3 py-1.5 rounded text-sm ${
+                                                                !choice.historyIsDialogue
+                                                                    ? 'bg-blue-600 text-white'
+                                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                            }`}
+                                                            onClick={() => {
+                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
+                                                                newChoices[index] = {
+                                                                    ...choice,
+                                                                    historyIsDialogue: false
+                                                                };
+                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                            }}
+                                                        >
+                                                            Descriptive
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            {/* Next Node Selection */}
-                                            <div className="space-y-1">
-                                                <label className="text-xs text-gray-400">Next Step</label>
+                                            {/* Next Step Selection */}
+                                            <div className="space-y-1 mt-4">
+                                                <label className="text-sm font-medium text-gray-300">Next Step</label>
                                                 <select
                                                     className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
                                                     value={choice.next || ''}

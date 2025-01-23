@@ -18,5 +18,4 @@ these, see [here](https://developers.cloudflare.com/pages/framework-guides/deplo
 TODO:
 
 - Delete node
-- Allow either dialogue or non-dialogue in the choice options, as well as the history text
-- No quotes or prepending names on non-dialogue choice
+- Wrap text in the choices
