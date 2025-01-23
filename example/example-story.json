@@ -7,7 +7,6 @@
         "steps": {
           "first_choice": {
             "type": "choice",
-            "text": "What would you like to do?",
             "choices": [
               {
                 "text": "Who are you?",
@@ -44,7 +43,6 @@
           },
           "help_choice": {
             "type": "choice",
-            "text": "What will you do?",
             "choices": [
               {
                 "text": "What kind of help?",
@@ -129,7 +127,6 @@
           },
           "turn_choice": {
             "type": "choice",
-            "text": "What do you do?",
             "choices": [
               {
                 "text": "Turn around slowly",
@@ -161,7 +158,6 @@
           },
           "end_choice": {
             "type": "choice",
-            "text": "Your response?",
             "choices": [
               {
                 "text": "I'm listening",

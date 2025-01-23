@@ -15,3 +15,9 @@ use `story:put:prod` to push it to the production KV store, and `story:get:prod`
 into local if you want to overwrite the local store. You will need to configure your pages app in cloudflare to use 
 these, see [here](https://developers.cloudflare.com/pages/framework-guides/deploy-a-remix-site/)
 
+TODO:
+
+- Delete node
+- Edit the history text in the choices
+- Allow either dialogue or non-dialogue in the choice options, as well as the history text
+- No quotes or prepending names on non-dialogue choice

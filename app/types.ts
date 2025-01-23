@@ -20,7 +20,7 @@ export interface DescriptionStep extends BaseStep {
     next?: string;
 }
 
-export interface ChoiceStep extends BaseStep {
+export interface ChoiceStep {
     type: 'choice';
     choices: Choice[];
 }
@@ -63,8 +63,9 @@ export interface DescriptionNodeData extends BaseNodeData {
     next?: string;
 }
 
-export interface ChoiceNodeData extends BaseNodeData {
+export interface ChoiceNodeData {
     type: 'choice';
+    stepId: string;
     choices: Choice[];
 }
 
