@@ -422,12 +422,19 @@ const StoryEditor = () => {
                                 data: {...currentNodeData, stepId: node.id}
                             });
                         }}
-                        deleteKeyCode="Delete"
+                        deleteKeyCode={['Delete', 'Backspace']}
                         fitView
+                        onKeyDown={(event: React.KeyboardEvent<HTMLDivElement>) => {
+                            if (event.key === 'Delete' || event.key === 'Backspace') {
+                                if (selectedNode) {
+                                    handleNodesDelete([selectedNode]);
+                                }
+                            }
+                        }}
                     >
-                        <Background />
-                        <Controls />
-                        <MiniMap />
+                        <Background/>
+                        <Controls/>
+                        <MiniMap/>
                     </ReactFlow>
                 </div>
             </div>
@@ -435,7 +442,20 @@ const StoryEditor = () => {
             <div className="w-64 p-4 border-l border-gray-700 bg-gray-800">
                 {selectedNode ? (
                     <div className="space-y-4">
-                        <h3 className="font-medium text-white">Edit Node: {selectedNode.data.stepId}</h3>
+                        <div>
+                            <button
+                                onClick={() => {
+                                    handleNodesDelete([selectedNode]);
+                                }}
+                                className="w-full px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 mb-2"
+                            >
+                                Delete Node
+                            </button>
+                            <h3 className="font-medium text-white border-b border-gray-700 pb-2">
+                                Edit Node: {selectedNode.data.stepId}
+                            </h3>
+                        </div>
+
                         <div className="space-y-2">
                             <label htmlFor="nodeId" className="text-sm font-medium text-gray-300">Node ID</label>
                             <input
@@ -516,7 +536,7 @@ const StoryEditor = () => {
                                                 isDialogue: false,
                                                 historyIsDialogue: false
                                             });
-                                            updateNodeData(selectedNode.id, { choices: newChoices });
+                                            updateNodeData(selectedNode.id, {choices: newChoices});
                                         }}
                                         className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
                                     >
@@ -532,7 +552,7 @@ const StoryEditor = () => {
                                                     onClick={() => {
                                                         const newChoices = [...(selectedNode.data as ChoiceStep).choices];
                                                         newChoices.splice(index, 1);
-                                                        updateNodeData(selectedNode.id, { choices: newChoices });
+                                                        updateNodeData(selectedNode.id, {choices: newChoices});
                                                     }}
                                                     className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
                                                 >
@@ -556,7 +576,7 @@ const StoryEditor = () => {
                                                                 ...choice,
                                                                 text: e.target.value
                                                             };
-                                                            updateNodeData(selectedNode.id, { choices: newChoices });
+                                                            updateNodeData(selectedNode.id, {choices: newChoices});
                                                         }}
                                                         placeholder="Text shown in choice button"
                                                         rows={2}
@@ -579,7 +599,7 @@ const StoryEditor = () => {
                                                                     ...choice,
                                                                     isDialogue: true
                                                                 };
-                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                                updateNodeData(selectedNode.id, {choices: newChoices});
                                                             }}
                                                         >
                                                             Dialogue
@@ -596,7 +616,7 @@ const StoryEditor = () => {
                                                                     ...choice,
                                                                     isDialogue: false
                                                                 };
-                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                                updateNodeData(selectedNode.id, {choices: newChoices});
                                                             }}
                                                         >
                                                             Descriptive
@@ -621,7 +641,7 @@ const StoryEditor = () => {
                                                                 ...choice,
                                                                 historyText: e.target.value || undefined
                                                             };
-                                                            updateNodeData(selectedNode.id, { choices: newChoices });
+                                                            updateNodeData(selectedNode.id, {choices: newChoices});
                                                         }}
                                                         placeholder="Custom text for history (leave empty to use choice text)"
                                                         rows={2}
@@ -644,7 +664,7 @@ const StoryEditor = () => {
                                                                     ...choice,
                                                                     historyIsDialogue: true
                                                                 };
-                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                                updateNodeData(selectedNode.id, {choices: newChoices});
                                                             }}
                                                         >
                                                             Dialogue
@@ -661,7 +681,7 @@ const StoryEditor = () => {
                                                                     ...choice,
                                                                     historyIsDialogue: false
                                                                 };
-                                                                updateNodeData(selectedNode.id, { choices: newChoices });
+                                                                updateNodeData(selectedNode.id, {choices: newChoices});
                                                             }}
                                                         >
                                                             Descriptive
@@ -682,7 +702,7 @@ const StoryEditor = () => {
                                                             ...choice,
                                                             next: e.target.value
                                                         };
-                                                        updateNodeData(selectedNode.id, { choices: newChoices });
+                                                        updateNodeData(selectedNode.id, {choices: newChoices});
                                                     }}
                                                 >
                                                     <option value="">Select next node</option>

@@ -14,7 +14,3 @@ that gets deployed to cloudflare), and the editor can be accessed via /edit. Whe
 use `story:put:prod` to push it to the production KV store, and `story:get:prod` to read the production KV store back
 into local if you want to overwrite the local store. You will need to configure your pages app in cloudflare to use 
 these, see [here](https://developers.cloudflare.com/pages/framework-guides/deploy-a-remix-site/)
-
-TODO:
-
-- Delete node
