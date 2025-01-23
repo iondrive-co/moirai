@@ -18,4 +18,3 @@ these, see [here](https://developers.cloudflare.com/pages/framework-guides/deplo
 TODO:
 
 - Delete node
-- Wrap text in the choices

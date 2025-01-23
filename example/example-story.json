@@ -13,14 +13,18 @@
                 "next": "mysterious_response",
                 "setVariables": {
                   "trustLevel": 1
-                }
+                },
+                "isDialogue": true,
+                "historyIsDialogue": true
               },
               {
                 "text": "I noticed you watching me.",
                 "next": "perceptive_response",
                 "setVariables": {
                   "trustLevel": 2
-                }
+                },
+                "isDialogue": true,
+                "historyIsDialogue": true
               }
             ]
           },
@@ -46,11 +50,15 @@
             "choices": [
               {
                 "text": "What kind of help?",
-                "next": "help_explanation"
+                "next": "help_explanation",
+                "isDialogue": true,
+                "historyIsDialogue": true
               },
               {
                 "text": "I'm not interested.",
-                "next": "leave_option"
+                "next": "leave_option",
+                "isDialogue": true,
+                "historyIsDialogue": true
               }
             ]
           },
@@ -135,13 +143,17 @@
                 "next": "face_follower",
                 "requires": {
                   "trustLevel": 2
-                }
+                },
+                "isDialogue": false,
+                "historyIsDialogue": false
               },
               {
                 "text": "Start running",
                 "historyText": "Without hesitation, you break into a sprint.",
                 "isAction": true,
-                "next": "run_away"
+                "next": "run_away",
+                "isDialogue": false,
+                "historyIsDialogue": false
               }
             ]
           },
@@ -161,11 +173,15 @@
             "choices": [
               {
                 "text": "I'm listening",
-                "next": "reveal_secret"
+                "next": "reveal_secret",
+                "isDialogue": true,
+                "historyIsDialogue": true
               },
               {
                 "text": "Keep walking",
-                "next": "walk_away"
+                "next": "walk_away",
+                "isDialogue": true,
+                "historyIsDialogue": true
               }
             ]
           },

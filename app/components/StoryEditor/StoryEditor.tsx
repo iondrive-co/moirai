@@ -547,8 +547,8 @@ const StoryEditor = () => {
                                                 {/* Choice Text Input */}
                                                 <div className="space-y-1">
                                                     <label className="text-xs text-gray-400">Text</label>
-                                                    <input
-                                                        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                    <textarea
+                                                        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded resize-none"
                                                         value={choice.text}
                                                         onChange={(e) => {
                                                             const newChoices = [...(selectedNode.data as ChoiceStep).choices];
@@ -559,6 +559,7 @@ const StoryEditor = () => {
                                                             updateNodeData(selectedNode.id, { choices: newChoices });
                                                         }}
                                                         placeholder="Text shown in choice button"
+                                                        rows={2}
                                                     />
                                                 </div>
 
@@ -611,8 +612,8 @@ const StoryEditor = () => {
                                                 {/* History Text Input */}
                                                 <div className="space-y-1">
                                                     <label className="text-xs text-gray-400">Text (optional)</label>
-                                                    <input
-                                                        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                                    <textarea
+                                                        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded resize-none"
                                                         value={choice.historyText || ''}
                                                         onChange={(e) => {
                                                             const newChoices = [...(selectedNode.data as ChoiceStep).choices];
@@ -623,6 +624,7 @@ const StoryEditor = () => {
                                                             updateNodeData(selectedNode.id, { choices: newChoices });
                                                         }}
                                                         placeholder="Custom text for history (leave empty to use choice text)"
+                                                        rows={2}
                                                     />
                                                 </div>
 
