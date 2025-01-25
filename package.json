@@ -17,6 +17,7 @@
     "story:load-example": "node scripts/story-manager.js load-example",
     "story:backup": "node scripts/story-manager.js backup",
     "story:load": "node scripts/story-manager.js load",
+    "story:list": "node scripts/story-manager.js list",
     "typecheck": "tsc",
     "typegen": "wrangler types"
   },
@@ -55,7 +56,7 @@
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.2.1",
-    "wrangler": "3.105.0"
+    "wrangler": "3.105.1"
   },
   "engines": {
     "node": ">=20.0.0"
