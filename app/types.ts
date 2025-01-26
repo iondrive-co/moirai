@@ -10,6 +10,7 @@ export interface Variable {
 
 export interface VariableSetting {
     variableName: string;
+    operator: '==' | '!=' | '>' | '<' | '>=' | '<=';
     value: string | number | boolean;
 }
 

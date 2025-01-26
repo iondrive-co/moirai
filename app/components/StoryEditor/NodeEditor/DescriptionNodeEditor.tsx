@@ -51,7 +51,6 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
 
                 {node.data.conditionalBranches?.map((branch: ConditionalBranch, index: number) => (
                     <div key={index} className="space-y-2 p-3 border border-gray-600 rounded">
-                        {/* Rest of the conditional branch UI */}
                         <div className="flex justify-between items-center border-b border-gray-700 pb-2">
                             <span className="text-sm font-medium text-gray-300">Branch {index + 1}</span>
                             <button
@@ -66,9 +65,9 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                             </button>
                         </div>
 
-                        <div className="flex gap-2 items-center">
+                        <div className="space-y-2">
                             <input
-                                className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
                                 placeholder="Variable name"
                                 value={branch.condition.variableName}
                                 onChange={(e) => {
@@ -83,47 +82,49 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                     onUpdateNodeData(node.id, { conditionalBranches: newBranches });
                                 }}
                             />
-                            <select
-                                className="p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                value={branch.condition.operator}
-                                onChange={(e) => {
-                                    const newBranches = [...(node.data.conditionalBranches || [])];
-                                    newBranches[index] = {
-                                        ...branch,
-                                        condition: {
-                                            ...branch.condition,
-                                            operator: e.target.value as Condition['operator']
-                                        }
-                                    };
-                                    onUpdateNodeData(node.id, {conditionalBranches: newBranches});
-                                }}
-                            >
-                                <option value="==">=</option>
-                                <option value="!=">≠</option>
-                                <option value=">">{`>`}</option>
-                                <option value="<">{`<`}</option>
-                                <option value=">=">{`>=`}</option>
-                                <option value="<=">{`<=`}</option>
-                            </select>
-                            <input
-                                className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                placeholder="Value"
-                                value={String(branch.condition.value)}
-                                onChange={(e) => {
-                                    const newBranches = [...(node.data.conditionalBranches || [])];
-                                    newBranches[index] = {
-                                        ...branch,
-                                        condition: {
-                                            ...branch.condition,
-                                            value: e.target.value
-                                        }
-                                    };
-                                    onUpdateNodeData(node.id, { conditionalBranches: newBranches });
-                                }}
-                            />
-                        </div>
 
-                        <div className="mt-2">
+                            <div className="flex gap-2">
+                                <select
+                                    className="w-24 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                    value={branch.condition.operator}
+                                    onChange={(e) => {
+                                        const newBranches = [...(node.data.conditionalBranches || [])];
+                                        newBranches[index] = {
+                                            ...branch,
+                                            condition: {
+                                                ...branch.condition,
+                                                operator: e.target.value as Condition['operator']
+                                            }
+                                        };
+                                        onUpdateNodeData(node.id, { conditionalBranches: newBranches });
+                                    }}
+                                >
+                                    <option value="==">=</option>
+                                    <option value="!=">≠</option>
+                                    <option value=">">&gt;</option>
+                                    <option value="<">&lt;</option>
+                                    <option value=">=">&gt;=</option>
+                                    <option value="<=">&lt;=</option>
+                                </select>
+
+                                <input
+                                    className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                    placeholder="Value"
+                                    value={String(branch.condition.value)}
+                                    onChange={(e) => {
+                                        const newBranches = [...(node.data.conditionalBranches || [])];
+                                        newBranches[index] = {
+                                            ...branch,
+                                            condition: {
+                                                ...branch.condition,
+                                                value: e.target.value
+                                            }
+                                        };
+                                        onUpdateNodeData(node.id, { conditionalBranches: newBranches });
+                                    }}
+                                />
+                            </div>
+
                             <select
                                 className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
                                 value={branch.next}
