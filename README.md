@@ -29,4 +29,4 @@ pages app in cloudflare to use these, see
 
 TODO:
 
-- Save and load variables
+- Variables for determining available choices

@@ -1,9 +1,36 @@
+import { Node, Edge } from 'reactflow';
+
+export type StoryNode = Node<StoryNodeData>;
+export type StoryEdge = Edge;
+
+export interface Variable {
+    name: string;
+    value: string | number | boolean;
+}
+
+export interface VariableSetting {
+    variableName: string;
+    value: string | number | boolean;
+}
+
 export interface Choice {
     text: string;
     next: string;
     historyText?: string;
     isDialogue?: boolean;
     historyIsDialogue?: boolean;
+    setVariables?: VariableSetting[];
+}
+
+export interface Condition {
+    variableName: string;
+    operator: '==' | '!=' | '>' | '<' | '>=' | '<=';
+    value: string | number | boolean;
+}
+
+export interface ConditionalBranch {
+    condition: Condition;
+    next: string;
 }
 
 export interface HistoryItem {
@@ -27,6 +54,7 @@ export interface DialogueStep extends BaseStep {
 export interface DescriptionStep extends BaseStep {
     type: 'description';
     next?: string;
+    conditionalBranches?: ConditionalBranch[];
 }
 
 export interface ChoiceStep {
@@ -70,6 +98,7 @@ export interface DialogueNodeData extends BaseNodeData {
 export interface DescriptionNodeData extends BaseNodeData {
     type: 'description';
     next?: string;
+    conditionalBranches?: ConditionalBranch[];
 }
 
 export interface ChoiceNodeData {

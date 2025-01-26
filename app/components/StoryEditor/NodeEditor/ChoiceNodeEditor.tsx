@@ -1,0 +1,191 @@
+import React from 'react';
+import type { StoryNode, StoryNodeData, ChoiceNodeData, Step, Choice, VariableSetting } from '~/types';
+
+interface ChoiceNodeEditorProps {
+    node: StoryNode & { data: ChoiceNodeData };
+    onUpdateNodeData: (nodeId: string, newData: Partial<StoryNodeData>) => void;
+    availableNodes: [string, Step][];
+}
+
+export const ChoiceNodeEditor: React.FC<ChoiceNodeEditorProps> = ({
+                                                                      node,
+                                                                      onUpdateNodeData,
+                                                                      availableNodes
+                                                                  }) => {
+    const addChoice = () => {
+        const newChoice: Choice = {
+            text: 'New Choice',
+            next: '',
+            isDialogue: false,
+            historyIsDialogue: false,
+            setVariables: []
+        };
+        const newChoices = [...node.data.choices, newChoice];
+        onUpdateNodeData(node.id, { choices: newChoices });
+    };
+
+    const updateChoice = (index: number, updates: Partial<Choice>) => {
+        const newChoices = [...node.data.choices];
+        newChoices[index] = { ...newChoices[index], ...updates };
+        onUpdateNodeData(node.id, { choices: newChoices });
+    };
+
+    const removeChoice = (index: number) => {
+        const newChoices = [...node.data.choices];
+        newChoices.splice(index, 1);
+        onUpdateNodeData(node.id, { choices: newChoices });
+    };
+
+    const addVariableToChoice = (choiceIndex: number) => {
+        const newChoices = [...node.data.choices];
+        const newVariable: VariableSetting = { variableName: '', value: '' };
+        const currentVariables = newChoices[choiceIndex].setVariables || [];
+        newChoices[choiceIndex] = {
+            ...newChoices[choiceIndex],
+            setVariables: [...currentVariables, newVariable]
+        };
+        onUpdateNodeData(node.id, { choices: newChoices });
+    };
+
+    const updateChoiceVariable = (choiceIndex: number, varIndex: number, updates: Partial<VariableSetting>) => {
+        const newChoices = [...node.data.choices];
+        const choice = newChoices[choiceIndex];
+        const newVars = [...(choice.setVariables || [])];
+        newVars[varIndex] = { ...newVars[varIndex], ...updates };
+        newChoices[choiceIndex] = { ...choice, setVariables: newVars };
+        onUpdateNodeData(node.id, { choices: newChoices });
+    };
+
+    const removeChoiceVariable = (choiceIndex: number, varIndex: number) => {
+        const newChoices = [...node.data.choices];
+        const choice = newChoices[choiceIndex];
+        const newVars = [...(choice.setVariables || [])];
+        newVars.splice(varIndex, 1);
+        newChoices[choiceIndex] = { ...choice, setVariables: newVars };
+        onUpdateNodeData(node.id, { choices: newChoices });
+    };
+
+    return (
+        <div className="space-y-4">
+            <div className="flex justify-between items-center">
+                <h4 className="text-sm font-medium text-gray-300">Choices</h4>
+                <button
+                    onClick={addChoice}
+                    className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
+                >
+                    Add Choice
+                </button>
+            </div>
+
+            <div className="space-y-4">
+                {node.data.choices.map((choice: Choice, choiceIndex: number) => (
+                    <div key={choiceIndex} className="space-y-2 p-3 border border-gray-600 rounded">
+                        <div className="flex justify-between items-center border-b border-gray-700 pb-2">
+                            <span className="text-sm font-medium text-gray-300">Choice {choiceIndex + 1}</span>
+                            <button
+                                onClick={() => removeChoice(choiceIndex)}
+                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                            >
+                                Remove
+                            </button>
+                        </div>
+
+                        {/* Choice Text */}
+                        <div className="space-y-2">
+                            <textarea
+                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                value={choice.text}
+                                onChange={(e) => updateChoice(choiceIndex, { text: e.target.value })}
+                                rows={2}
+                                placeholder="Choice text"
+                            />
+                        </div>
+
+                        {/* Display Type */}
+                        <div className="flex gap-2">
+                            <button
+                                className={`flex-1 px-2 py-1 rounded text-sm ${
+                                    choice.isDialogue
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                }`}
+                                onClick={() => updateChoice(choiceIndex, { isDialogue: true })}
+                            >
+                                Dialogue
+                            </button>
+                            <button
+                                className={`flex-1 px-2 py-1 rounded text-sm ${
+                                    !choice.isDialogue
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                }`}
+                                onClick={() => updateChoice(choiceIndex, { isDialogue: false })}
+                            >
+                                Descriptive
+                            </button>
+                        </div>
+
+                        {/* Next Node */}
+                        <div className="mt-2">
+                            <select
+                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                value={choice.next}
+                                onChange={(e) => updateChoice(choiceIndex, { next: e.target.value })}
+                            >
+                                <option value="">Select next node</option>
+                                {availableNodes.map(([id, step]) => (
+                                    <option key={id} value={id}>
+                                        {id} ({step.type})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Variable Settings */}
+                        <div className="mt-4 space-y-2">
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-gray-300">Set Variables</label>
+                                <button
+                                    onClick={() => addVariableToChoice(choiceIndex)}
+                                    className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                                >
+                                    Add Variable
+                                </button>
+                            </div>
+                            {choice.setVariables?.map((varSetting, varIndex) => (
+                                <div key={varIndex} className="flex gap-2 items-center">
+                                    <input
+                                        className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                        placeholder="Variable name"
+                                        value={varSetting.variableName}
+                                        onChange={(e) => updateChoiceVariable(
+                                            choiceIndex,
+                                            varIndex,
+                                            { variableName: e.target.value }
+                                        )}
+                                    />
+                                    <input
+                                        className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                        placeholder="Value"
+                                        value={String(varSetting.value)}
+                                        onChange={(e) => updateChoiceVariable(
+                                            choiceIndex,
+                                            varIndex,
+                                            { value: e.target.value }
+                                        )}
+                                    />
+                                    <button
+                                        onClick={() => removeChoiceVariable(choiceIndex, varIndex)}
+                                        className="p-2 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};

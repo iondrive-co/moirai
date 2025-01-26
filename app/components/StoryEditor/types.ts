@@ -1,11 +1,4 @@
-import { Edge, Node, MarkerType } from 'reactflow';
-import type { StoryNodeData } from '~/types';
-
-interface EdgeData {
-}
-
-export type StoryNode = Node<StoryNodeData>;
-export type StoryEdge = Edge<EdgeData>;
+import { MarkerType } from 'reactflow';
 
 export const defaultEdgeOptions = {
     type: 'smoothstep' as const,

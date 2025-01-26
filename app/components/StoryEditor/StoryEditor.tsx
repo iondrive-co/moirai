@@ -1,16 +1,10 @@
-import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, Connection, Node } from 'reactflow';
+import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow';
 import { useState, useCallback, useEffect } from 'react';
 import 'reactflow/dist/style.css';
-import type {
-    StoryData,
-    StoryNodeData,
-    Choice,
-    ChoiceStep,
-    DialogueNodeData,
-    DescriptionNodeData,
-} from '~/types';
+import type { StoryData, StoryNodeData, ChoiceStep, StoryNode, StoryEdge } from '~/types';
+import { NodeEditor } from './NodeEditor';
 import { nodeTypes } from './NodeTypes';
-import { StoryNode, StoryEdge, defaultEdgeOptions } from './types';
+import { defaultEdgeOptions } from './types';
 import { calculateNodePosition } from './utils';
 
 const initialStoryData: StoryData = {
@@ -20,7 +14,7 @@ const initialStoryData: StoryData = {
     }
 };
 
-const StoryEditor = () => {
+export const StoryEditor = () => {
     const [currentScene, setCurrentScene] = useState('intro');
     const [nodes, setNodes, onNodesChange] = useNodesState<StoryNodeData>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -36,7 +30,6 @@ const StoryEditor = () => {
         if (!scene) return;
 
         Object.entries(scene.steps).forEach(([stepId, step], index) => {
-            // Ensure we're using saved positions correctly
             const position = scene.nodePositions?.[stepId] || calculateNodePosition(index);
 
             const nodeData: StoryNodeData = {
@@ -61,18 +54,37 @@ const StoryEditor = () => {
                 } as StoryEdge);
             }
 
+            if (step.type === 'description' && step.conditionalBranches) {
+                step.conditionalBranches.forEach((branch, branchIndex) => {
+                    if (branch.next) {
+                        newEdges.push({
+                            id: `${stepId}-${branch.next}-condition-${branchIndex}`,
+                            source: stepId,
+                            target: branch.next,
+                            ...defaultEdgeOptions,
+                            style: {
+                                ...defaultEdgeOptions.style,
+                                stroke: '#10b981' // Green color for conditional branches
+                            }
+                        } as StoryEdge);
+                    }
+                });
+            }
+
             if (step.type === 'choice') {
                 (step as ChoiceStep).choices.forEach((choice, choiceIndex) => {
-                    newEdges.push({
-                        id: `${stepId}-${choice.next}-${choiceIndex}`,
-                        source: stepId,
-                        target: choice.next,
-                        ...defaultEdgeOptions,
-                        style: {
-                            ...defaultEdgeOptions.style,
-                            stroke: '#a855f7'
-                        }
-                    } as StoryEdge);
+                    if (choice.next) {
+                        newEdges.push({
+                            id: `${stepId}-${choice.next}-${choiceIndex}`,
+                            source: stepId,
+                            target: choice.next,
+                            ...defaultEdgeOptions,
+                            style: {
+                                ...defaultEdgeOptions.style,
+                                stroke: '#a855f7'
+                            }
+                        } as StoryEdge);
+                    }
                 });
             }
         });
@@ -81,7 +93,7 @@ const StoryEditor = () => {
         setEdges(newEdges);
     }, [currentScene, storyData, setNodes, setEdges]);
 
-    const onNodeDragStop = useCallback((_: React.MouseEvent, node: Node<StoryNodeData>) => {
+    const onNodeDragStop = useCallback((_: React.MouseEvent, node: StoryNode) => {
         setStoryData(prev => {
             const newData = { ...prev };
             const scene = newData[currentScene];
@@ -101,7 +113,115 @@ const StoryEditor = () => {
         setHasChanges(true);
     }, [currentScene]);
 
-    const updateNodeId = (oldId: string, newId: string) => {
+    const handleNodesDelete = useCallback((nodesToDelete: StoryNode[]) => {
+        setStoryData((prev) => {
+            const newData = { ...prev };
+            const scene = newData[currentScene];
+
+            nodesToDelete.forEach((node) => {
+                delete scene.steps[node.id];
+
+                Object.values(scene.steps).forEach((step) => {
+                    if ('next' in step && step.next === node.id) {
+                        step.next = undefined;
+                    }
+                    if (step.type === 'choice') {
+                        step.choices = step.choices.filter(choice => choice.next !== node.id);
+                    }
+                    if ('conditionalBranches' in step && step.conditionalBranches) {
+                        step.conditionalBranches = step.conditionalBranches.filter(
+                            branch => branch.next !== node.id
+                        );
+                    }
+                });
+
+                if (scene.startingStep === node.id) {
+                    scene.startingStep = '';
+                }
+            });
+
+            return newData;
+        });
+
+        if (selectedNode && nodesToDelete.some(node => node.id === selectedNode.id)) {
+            setSelectedNode(null);
+        }
+
+        setHasChanges(true);
+    }, [currentScene, selectedNode]);
+
+    const onConnect = useCallback((params: Connection) => {
+        const source = params.source;
+        const target = params.target;
+        if (!source || !target) return;
+
+        const newEdge = {
+            ...params,
+            ...defaultEdgeOptions,
+            source,
+            target
+        } as StoryEdge;
+
+        setEdges((eds) => addEdge(newEdge, eds));
+
+        setStoryData((prev) => {
+            const newData = { ...prev };
+            const sourceStep = newData[currentScene].steps[source];
+
+            if (sourceStep.type === 'choice') {
+                sourceStep.choices = [
+                    ...sourceStep.choices,
+                    {
+                        text: 'New Choice',
+                        next: target,
+                        isDialogue: false,
+                        historyIsDialogue: false,
+                        setVariables: []
+                    }
+                ];
+            } else if ('next' in sourceStep) {
+                sourceStep.next = target;
+            }
+
+            return newData;
+        });
+
+        setHasChanges(true);
+    }, [setEdges, currentScene]);
+
+    const updateNodeData = useCallback((nodeId: string, newData: Partial<StoryNodeData>) => {
+        setStoryData((prev) => {
+            const newStoryData = { ...prev };
+            const currentStep = newStoryData[currentScene].steps[nodeId];
+            const currentNodePositions = newStoryData[currentScene].nodePositions || {};
+
+            newStoryData[currentScene].steps[nodeId] = {
+                ...currentStep,
+                ...newData
+            } as StoryNodeData;
+
+            newStoryData[currentScene].nodePositions = currentNodePositions;
+
+            return newStoryData;
+        });
+
+        setSelectedNode((prev) => {
+            if (!prev || prev.id !== nodeId) return prev;
+            return {
+                ...prev,
+                data: {
+                    ...prev.data,
+                    ...newData,
+                    stepId: nodeId
+                }
+            } as StoryNode;
+        });
+
+        setHasChanges(true);
+        updateNodesAndEdges();
+    }, [currentScene, updateNodesAndEdges]);
+
+    const updateNodeId = useCallback((oldId: string, newId: string) => {
         if (oldId === newId) return;
         if (storyData[currentScene].steps[newId]) {
             alert('A node with this ID already exists');
@@ -112,12 +232,10 @@ const StoryEditor = () => {
             const newData = { ...prev };
             const steps = newData[currentScene].steps;
 
-            // Update the node's ID
             const nodeData = steps[oldId];
             delete steps[oldId];
             steps[newId] = nodeData;
 
-            // Update all references to this node
             Object.values(steps).forEach((step) => {
                 if ('next' in step && step.next === oldId) {
                     step.next = newId;
@@ -125,6 +243,11 @@ const StoryEditor = () => {
                 if (step.type === 'choice') {
                     step.choices = step.choices.map(choice =>
                         choice.next === oldId ? { ...choice, next: newId } : choice
+                    );
+                }
+                if ('conditionalBranches' in step && step.conditionalBranches) {
+                    step.conditionalBranches = step.conditionalBranches.map(branch =>
+                        branch.next === oldId ? { ...branch, next: newId } : branch
                     );
                 }
             });
@@ -144,121 +267,9 @@ const StoryEditor = () => {
 
         setHasChanges(true);
         updateNodesAndEdges();
-    };
+    }, [currentScene, storyData, updateNodesAndEdges]);
 
-    useEffect(() => {
-        updateNodesAndEdges();
-    }, [currentScene, updateNodesAndEdges]);
-
-    const handleNodesDelete = (nodesToDelete: StoryNode[]) => {
-        setStoryData((prev) => {
-            const newData = { ...prev };
-            const scene = newData[currentScene];
-
-            nodesToDelete.forEach((node) => {
-                // Delete the node itself
-                delete scene.steps[node.id];
-
-                // Remove any references to this node from other nodes
-                Object.values(scene.steps).forEach((step) => {
-                    if ('next' in step && step.next === node.id) {
-                        step.next = undefined;
-                    }
-                    if (step.type === 'choice') {
-                        step.choices = step.choices.filter(choice => choice.next !== node.id);
-                    }
-                });
-
-                // If this was the starting step, clear it
-                if (scene.startingStep === node.id) {
-                    scene.startingStep = '';
-                }
-            });
-
-            return newData;
-        });
-
-        // Clear selected node if it was deleted
-        if (selectedNode && nodesToDelete.some(node => node.id === selectedNode.id)) {
-            setSelectedNode(null);
-        }
-
-        setHasChanges(true);
-    };
-
-    const onConnect = useCallback((params: Connection) => {
-        if (!params.source || !params.target) return;
-
-        const newEdge = {
-            ...params,
-            ...defaultEdgeOptions,
-            source: params.source,
-            target: params.target
-        } as StoryEdge;
-
-        setEdges((eds) => addEdge(newEdge, eds));
-
-        setStoryData((prev) => {
-            const newData = { ...prev };
-            const source = params.source;
-            if (!source) return prev;
-
-            const sourceStep = newData[currentScene].steps[source];
-
-            if (sourceStep.type === 'choice') {
-                (sourceStep as ChoiceStep).choices = [
-                    ...(sourceStep as ChoiceStep).choices,
-                    { text: 'New Choice', next: params.target as string }
-                ];
-            } else if (params.target) {
-                if ('next' in sourceStep && sourceStep.next) {
-                    sourceStep.next = params.target;
-                }
-            }
-
-            return newData;
-        });
-
-        setHasChanges(true);
-    }, [setEdges, currentScene]);
-
-
-    const updateNodeData = (nodeId: string, newData: Partial<StoryNodeData>) => {
-        setStoryData((prev) => {
-            const newStoryData = { ...prev };
-            const currentStep = newStoryData[currentScene].steps[nodeId];
-            // Keep the existing node positions when updating data
-            const currentNodePositions = newStoryData[currentScene].nodePositions || {};
-
-            newStoryData[currentScene].steps[nodeId] = {
-                ...currentStep,
-                ...newData
-            } as StoryNodeData;
-
-            // Ensure we keep the node positions
-            newStoryData[currentScene].nodePositions = currentNodePositions;
-
-            return newStoryData;
-        });
-
-        setSelectedNode((prev: StoryNode | null): StoryNode | null => {
-            if (!prev || prev.id !== nodeId) return prev;
-            const currentNodeData = storyData[currentScene].steps[nodeId];
-            return {
-                ...prev,
-                data: {
-                    ...currentNodeData,
-                    ...newData,
-                    stepId: nodeId
-                }
-            } as StoryNode;
-        });
-
-        setHasChanges(true);
-        updateNodesAndEdges();
-    };
-
-    const addNewNode = (type: 'dialogue' | 'description' | 'choice') => {
+    const addNewNode = useCallback((type: 'dialogue' | 'description' | 'choice') => {
         const newId = `${type}_${Date.now()}`;
 
         setStoryData((prev) => {
@@ -275,7 +286,13 @@ const StoryEditor = () => {
             } else if (type === 'choice') {
                 scene.steps[newId] = {
                     type: 'choice',
-                    choices: [{ text: 'New Choice', next: '' }]
+                    choices: [{
+                        text: 'New Choice',
+                        next: '',
+                        isDialogue: false,
+                        historyIsDialogue: false,
+                        setVariables: []
+                    }]
                 };
             } else {
                 scene.steps[newId] = {
@@ -293,7 +310,7 @@ const StoryEditor = () => {
 
         setHasChanges(true);
         updateNodesAndEdges();
-    };
+    }, [currentScene, updateNodesAndEdges]);
 
     useEffect(() => {
         const loadStoryData = async () => {
@@ -310,9 +327,9 @@ const StoryEditor = () => {
         loadStoryData();
     }, []);
 
-    if (!storyData) {
-        return <div>Loading...</div>;
-    }
+    useEffect(() => {
+        updateNodesAndEdges();
+    }, [currentScene, updateNodesAndEdges]);
 
     const handleSave = async () => {
         try {
@@ -336,6 +353,10 @@ const StoryEditor = () => {
             alert('Failed to save story: ' + (error instanceof Error ? error.message : 'Unknown error'));
         }
     };
+
+    if (!storyData) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <div className="h-screen flex">
@@ -440,290 +461,14 @@ const StoryEditor = () => {
             </div>
 
             <div className="w-64 p-4 border-l border-gray-700 bg-gray-800">
-                {selectedNode ? (
-                    <div className="space-y-4">
-                        <div>
-                            <button
-                                onClick={() => {
-                                    handleNodesDelete([selectedNode]);
-                                }}
-                                className="w-full px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 mb-2"
-                            >
-                                Delete Node
-                            </button>
-                            <h3 className="font-medium text-white border-b border-gray-700 pb-2">
-                                Edit Node: {selectedNode.data.stepId}
-                            </h3>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label htmlFor="nodeId" className="text-sm font-medium text-gray-300">Node ID</label>
-                            <input
-                                id="nodeId"
-                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                value={selectedNode.data.stepId}
-                                onChange={(e) => {
-                                    const newId = e.target.value.trim();
-                                    if (newId && newId !== selectedNode.data.stepId) {
-                                        updateNodeId(selectedNode.data.stepId, newId);
-                                    }
-                                }}
-                            />
-                        </div>
-
-                        {selectedNode.data.type !== 'choice' && (
-                            <div className="space-y-2">
-                                <label htmlFor="nodeText" className="text-sm font-medium text-gray-300">Text</label>
-                                <textarea
-                                    id="nodeText"
-                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                    value={selectedNode.data.text}
-                                    onChange={(e) => {
-                                        updateNodeData(selectedNode.id, {text: e.target.value});
-                                    }}
-                                    rows={4}
-                                />
-                            </div>
-                        )}
-
-                        {(selectedNode.data.type === 'dialogue' || selectedNode.data.type === 'description') && (
-                            <div className="space-y-2">
-                                <label htmlFor="nodeNext" className="text-sm font-medium text-gray-300">Next Node</label>
-                                <select
-                                    id="nodeNext"
-                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                    value={(selectedNode.data as DialogueNodeData | DescriptionNodeData).next || ''}
-                                    onChange={(e) => {
-                                        updateNodeData(selectedNode.id, {next: e.target.value || undefined});
-                                    }}
-                                >
-                                    <option value="">None</option>
-                                    {Object.entries(storyData[currentScene].steps)
-                                        .filter(([id]) => id !== selectedNode.id)
-                                        .map(([id, step]) => (
-                                            <option key={id} value={id}>
-                                                {id} ({step.type})
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-                        )}
-
-                        {selectedNode.data.type === 'dialogue' && (
-                            <div className="space-y-2">
-                                <label htmlFor="nodeSpeaker"
-                                       className="text-sm font-medium text-gray-300">Speaker</label>
-                                <input
-                                    id="nodeSpeaker"
-                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                    value={(selectedNode.data as DialogueNodeData).speaker}
-                                    onChange={(e) => {
-                                        updateNodeData(selectedNode.id, {speaker: e.target.value});
-                                    }}
-                                />
-                            </div>
-                        )}
-                        {selectedNode?.data.type === 'choice' && (
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <h4 className="text-sm font-medium text-gray-300">Choices</h4>
-                                    <button
-                                        onClick={() => {
-                                            const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                            newChoices.push({
-                                                text: 'New Choice',
-                                                next: '',
-                                                isDialogue: false,
-                                                historyIsDialogue: false
-                                            });
-                                            updateNodeData(selectedNode.id, {choices: newChoices});
-                                        }}
-                                        className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
-                                    >
-                                        Add Choice
-                                    </button>
-                                </div>
-                                <div className="space-y-4">
-                                    {(selectedNode.data as ChoiceStep).choices.map((choice, index) => (
-                                        <div key={index} className="space-y-2 p-3 border border-gray-600 rounded">
-                                            <div className="flex justify-between items-center border-b border-gray-700 pb-2">
-                                                <span className="text-sm font-medium text-gray-300">Choice {index + 1}</span>
-                                                <button
-                                                    onClick={() => {
-                                                        const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                        newChoices.splice(index, 1);
-                                                        updateNodeData(selectedNode.id, {choices: newChoices});
-                                                    }}
-                                                    className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-                                                >
-                                                    Remove
-                                                </button>
-                                            </div>
-
-                                            {/* Choice Text Section */}
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-gray-300">Choice Display</label>
-
-                                                {/* Choice Text Input */}
-                                                <div className="space-y-1">
-                                                    <label className="text-xs text-gray-400">Text</label>
-                                                    <textarea
-                                                        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded resize-none"
-                                                        value={choice.text}
-                                                        onChange={(e) => {
-                                                            const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                            newChoices[index] = {
-                                                                ...choice,
-                                                                text: e.target.value
-                                                            };
-                                                            updateNodeData(selectedNode.id, {choices: newChoices});
-                                                        }}
-                                                        placeholder="Text shown in choice button"
-                                                        rows={2}
-                                                    />
-                                                </div>
-
-                                                {/* Choice Display Type */}
-                                                <div className="space-y-1">
-                                                    <label className="text-xs text-gray-400">Display Type</label>
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            className={`flex-1 px-3 py-1.5 rounded text-sm ${
-                                                                choice.isDialogue
-                                                                    ? 'bg-blue-600 text-white'
-                                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                                            }`}
-                                                            onClick={() => {
-                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                                newChoices[index] = {
-                                                                    ...choice,
-                                                                    isDialogue: true
-                                                                };
-                                                                updateNodeData(selectedNode.id, {choices: newChoices});
-                                                            }}
-                                                        >
-                                                            Dialogue
-                                                        </button>
-                                                        <button
-                                                            className={`flex-1 px-3 py-1.5 rounded text-sm ${
-                                                                !choice.isDialogue
-                                                                    ? 'bg-blue-600 text-white'
-                                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                                            }`}
-                                                            onClick={() => {
-                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                                newChoices[index] = {
-                                                                    ...choice,
-                                                                    isDialogue: false
-                                                                };
-                                                                updateNodeData(selectedNode.id, {choices: newChoices});
-                                                            }}
-                                                        >
-                                                            Descriptive
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* History Text Section */}
-                                            <div className="space-y-2 mt-4">
-                                                <label className="text-sm font-medium text-gray-300">History Entry</label>
-
-                                                {/* History Text Input */}
-                                                <div className="space-y-1">
-                                                    <label className="text-xs text-gray-400">Text (optional)</label>
-                                                    <textarea
-                                                        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded resize-none"
-                                                        value={choice.historyText || ''}
-                                                        onChange={(e) => {
-                                                            const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                            newChoices[index] = {
-                                                                ...choice,
-                                                                historyText: e.target.value || undefined
-                                                            };
-                                                            updateNodeData(selectedNode.id, {choices: newChoices});
-                                                        }}
-                                                        placeholder="Custom text for history (leave empty to use choice text)"
-                                                        rows={2}
-                                                    />
-                                                </div>
-
-                                                {/* History Display Type */}
-                                                <div className="space-y-1">
-                                                    <label className="text-xs text-gray-400">Display Type</label>
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            className={`flex-1 px-3 py-1.5 rounded text-sm ${
-                                                                choice.historyIsDialogue
-                                                                    ? 'bg-blue-600 text-white'
-                                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                                            }`}
-                                                            onClick={() => {
-                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                                newChoices[index] = {
-                                                                    ...choice,
-                                                                    historyIsDialogue: true
-                                                                };
-                                                                updateNodeData(selectedNode.id, {choices: newChoices});
-                                                            }}
-                                                        >
-                                                            Dialogue
-                                                        </button>
-                                                        <button
-                                                            className={`flex-1 px-3 py-1.5 rounded text-sm ${
-                                                                !choice.historyIsDialogue
-                                                                    ? 'bg-blue-600 text-white'
-                                                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                                            }`}
-                                                            onClick={() => {
-                                                                const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                                newChoices[index] = {
-                                                                    ...choice,
-                                                                    historyIsDialogue: false
-                                                                };
-                                                                updateNodeData(selectedNode.id, {choices: newChoices});
-                                                            }}
-                                                        >
-                                                            Descriptive
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Next Step Selection */}
-                                            <div className="space-y-1 mt-4">
-                                                <label className="text-sm font-medium text-gray-300">Next Step</label>
-                                                <select
-                                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                                    value={choice.next || ''}
-                                                    onChange={(e) => {
-                                                        const newChoices = [...(selectedNode.data as ChoiceStep).choices];
-                                                        newChoices[index] = {
-                                                            ...choice,
-                                                            next: e.target.value
-                                                        };
-                                                        updateNodeData(selectedNode.id, {choices: newChoices});
-                                                    }}
-                                                >
-                                                    <option value="">Select next node</option>
-                                                    {Object.entries(storyData[currentScene].steps)
-                                                        .filter(([id]) => id !== selectedNode.id)
-                                                        .map(([id, step]) => (
-                                                            <option key={id} value={id}>
-                                                                {id} ({step.type})
-                                                            </option>
-                                                        ))}
-                                                </select>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <p className="text-gray-400">Select a node to edit its contents</p>
-                )}
+                <NodeEditor
+                    selectedNode={selectedNode}
+                    storyData={storyData}
+                    currentScene={currentScene}
+                    onUpdateNodeId={updateNodeId}
+                    onUpdateNodeData={updateNodeData}
+                    onDeleteNode={handleNodesDelete}
+                />
             </div>
         </div>
     );

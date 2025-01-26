@@ -42,8 +42,18 @@ export const DescriptionNode: React.FC<NodeProps<DescriptionNodeData>> = ({ data
         </div>
         <div className="p-3">
             <p className="text-sm text-white whitespace-pre-wrap">{data.text}</p>
-            {data.next && (
+            {data.next && !data.conditionalBranches?.length && (
                 <p className="text-xs text-gray-400 mt-2">Next: {data.next}</p>
+            )}
+            {data.conditionalBranches && data.conditionalBranches.length > 0 && (
+                <div className="mt-2">
+                    <p className="text-xs text-gray-400">Conditional Branches:</p>
+                    {data.conditionalBranches.map((branch, index) => (
+                        <p key={index} className="text-xs text-gray-400 ml-2">
+                            If {branch.condition.variableName} {branch.condition.operator} {String(branch.condition.value)} → {branch.next}
+                        </p>
+                    ))}
+                </div>
             )}
         </div>
 
