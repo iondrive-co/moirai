@@ -8,8 +8,9 @@ import type {
     DescriptionStep,
     ChoiceStep,
     SceneTransitionStep,
-    HistoryItem
+    HistoryItem, VariableSetting
 } from "~/types";
+import { useGameState } from '~/components/GameState';
 
 interface LoaderData {
     scene: {
@@ -181,6 +182,7 @@ export default function Scene() {
     const data = useLoaderData<typeof loader>() as LoaderData;
     const { isDevelopment } = data;
     const navigate = useNavigate();
+    const { evaluateCondition, setMultipleVariables } = useGameState();
     if (!data?.scene?.startingStep || !data?.scene?.steps) {
         throw new Error(`Invalid scene data: ${JSON.stringify(data)}`);
     }
@@ -196,6 +198,24 @@ export default function Scene() {
 
     const currentStep = data.scene.steps[currentStepId];
 
+    const getNextStep = (currentStep: Step): string | undefined => {
+        // Handle conditional branches for any step type that has them
+        if ('conditionalBranches' in currentStep && currentStep.conditionalBranches?.length) {
+            // Find the first matching condition
+            const matchingBranch = currentStep.conditionalBranches.find(branch => {
+                const result = evaluateCondition(branch.condition);
+                console.log('Evaluating condition:', branch.condition, 'Result:', result);
+                return result;
+            });
+            if (matchingBranch) {
+                console.log('Found matching branch:', matchingBranch);
+                return matchingBranch.next;
+            }
+        }
+        // Fall back to default next if no conditions match or no conditions exist
+        return 'next' in currentStep ? currentStep.next : undefined;
+    };
+
     const handleProgress = () => {
         if (!currentStep || isChoiceStep(currentStep) || isSceneTransitionStep(currentStep) || !awaitingClick) return;
 
@@ -205,19 +225,20 @@ export default function Scene() {
                 speaker: currentStep.speaker,
                 text: currentStep.text
             }]);
-            if (currentStep.next) {
-                setCurrentStepId(currentStep.next);
+            const nextStepId = getNextStep(currentStep);
+            if (nextStepId) {
+                setCurrentStepId(nextStepId);
             }
         } else if (isDescriptionStep(currentStep)) {
             setHistory(prev => [...prev, {
                 type: 'description',
                 text: currentStep.text
             }]);
-            if (currentStep.next) {
-                setCurrentStepId(currentStep.next);
+            const nextStepId = getNextStep(currentStep);
+            if (nextStepId) {
+                setCurrentStepId(nextStepId);
             }
         }
-
         setAwaitingClick(true);
     };
 
@@ -226,7 +247,14 @@ export default function Scene() {
         next: string;
         historyText?: string;
         isDialogue?: boolean;
+        setVariables?: VariableSetting[];
     }) => {
+        // Set variables if they exist
+        if (choice.setVariables?.length) {
+            console.log('Setting variables:', choice.setVariables);
+            setMultipleVariables(choice.setVariables);
+        }
+
         const historyItem: HistoryItem = {
             type: 'choice',
             text: choice.historyText || choice.text,
@@ -330,7 +358,8 @@ export default function Scene() {
                                                     text: choice.text,
                                                     next: choice.next,
                                                     historyText: historyText,
-                                                    isDialogue: choice.historyIsDialogue ?? choice.isDialogue
+                                                    isDialogue: choice.historyIsDialogue ?? choice.isDialogue,
+                                                    setVariables: choice.setVariables
                                                 });
                                             }}
                                             className="choice-text w-full text-left"

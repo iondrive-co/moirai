@@ -11,18 +11,26 @@
               {
                 "text": "Who are you?",
                 "next": "mysterious_response",
-                "setVariables": {
-                  "trustLevel": 1
-                },
+                "setVariables": [
+                  {
+                    "variableName": "trustLevel",
+                    "operator": "==",
+                    "value": 1
+                  }
+                ],
                 "isDialogue": true,
                 "historyIsDialogue": true
               },
               {
                 "text": "I noticed you watching me.",
                 "next": "perceptive_response",
-                "setVariables": {
-                  "trustLevel": 2
-                },
+                "setVariables": [
+                  {
+                    "variableName": "trustLevel",
+                    "operator": "==",
+                    "value": 2
+                  }
+                ],
                 "isDialogue": true,
                 "historyIsDialogue": true
               }
@@ -43,6 +51,35 @@
           "lean_forward": {
             "type": "description",
             "text": "The stranger leans forward, their hood casting deep shadows across their face.",
+            "conditionalBranches": [
+              {
+                "condition": {
+                  "variableName": "trustLevel",
+                  "operator": "==",
+                  "value": 2
+                },
+                "next": "high_trust_response"
+              },
+              {
+                "condition": {
+                  "variableName": "trustLevel",
+                  "operator": "==",
+                  "value": 1
+                },
+                "next": "low_trust_response"
+              }
+            ]
+          },
+          "high_trust_response": {
+            "type": "dialogue",
+            "speaker": "Stranger",
+            "text": "Your keen eye serves you well. Let me be direct with you then.",
+            "next": "help_choice"
+          },
+          "low_trust_response": {
+            "type": "dialogue",
+            "speaker": "Stranger",
+            "text": "Perhaps I should explain myself more carefully...",
             "next": "help_choice"
           },
           "help_choice": {
@@ -51,26 +88,95 @@
               {
                 "text": "What kind of help?",
                 "next": "help_explanation",
+                "setVariables": [
+                  {
+                    "variableName": "helpfulness",
+                    "operator": "==",
+                    "value": true
+                  }
+                ],
                 "isDialogue": true,
                 "historyIsDialogue": true
               },
               {
                 "text": "I'm not interested.",
                 "next": "leave_option",
+                "setVariables": [
+                  {
+                    "variableName": "helpfulness",
+                    "operator": "==",
+                    "value": false
+                  }
+                ],
                 "isDialogue": true,
                 "historyIsDialogue": true
               }
             ]
           },
           "help_explanation": {
+            "type": "description",
+            "text": "The stranger's expression changes as they consider how much to reveal.",
+            "conditionalBranches": [
+              {
+                "condition": {
+                  "variableName": "trustLevel",
+                  "operator": "==",
+                  "value": 2
+                },
+                "next": "full_explanation"
+              },
+              {
+                "condition": {
+                  "variableName": "trustLevel",
+                  "operator": "==",
+                  "value": 1
+                },
+                "next": "partial_explanation"
+              }
+            ]
+          },
+          "full_explanation": {
+            "type": "dialogue",
+            "speaker": "Stranger",
+            "text": "The artifact is an ancient crystal, said to hold the power of a thousand suns. If it falls into the wrong hands, the consequences would be catastrophic.",
+            "next": "leave_option"
+          },
+          "partial_explanation": {
             "type": "dialogue",
             "speaker": "Stranger",
             "text": "There's an artifact of great power that needs to be protected. I believe you have the skills necessary to help me guard it.",
             "next": "leave_option"
           },
           "leave_option": {
+            "type": "description",
+            "text": "You consider the stranger's words carefully.",
+            "conditionalBranches": [
+              {
+                "condition": {
+                  "variableName": "helpfulness",
+                  "operator": "==",
+                  "value": true
+                },
+                "next": "positive_departure"
+              },
+              {
+                "condition": {
+                  "variableName": "helpfulness",
+                  "operator": "==",
+                  "value": false
+                },
+                "next": "negative_departure"
+              }
+            ]
+          },
+          "positive_departure": {
             "type": "sceneTransition",
-            "text": "Leave the tavern",
+            "text": "Follow the stranger out of the tavern",
+            "nextScene": "outside_tavern"
+          },
+          "negative_departure": {
+            "type": "sceneTransition",
+            "text": "Leave the tavern alone",
             "nextScene": "outside_tavern"
           },
           "stranger_initial_talk": {
@@ -83,122 +189,6 @@
             "type": "description",
             "text": "You find yourself in a dimly lit tavern. At the corner table sits a hooded figure who seems to be watching you.",
             "next": "stranger_initial_talk"
-          }
-        },
-        "nodePositions": {
-          "opening_description": {
-            "x": -502.972580814955,
-            "y": -35.93204954171139
-          },
-          "stranger_initial_talk": {
-            "x": -491.11150123613515,
-            "y": 208.99605980722168
-          },
-          "first_choice": {
-            "x": -451.2441691366372,
-            "y": 425.0806707825176
-          },
-          "mysterious_response": {
-            "x": -460.42308271756553,
-            "y": 695.5933969832423
-          },
-          "perceptive_response": {
-            "x": -134.3026087807886,
-            "y": -15.923269410260673
-          },
-          "lean_forward": {
-            "x": -17.05987750354103,
-            "y": 282.94012249645897
-          },
-          "help_choice": {
-            "x": 380.66690630989825,
-            "y": 309.0821086419072
-          },
-          "help_explanation": {
-            "x": 436.2746540459503,
-            "y": 644.3814961596124
-          }
-        }
-      },
-      "outside_tavern": {
-        "startingStep": "initial_description",
-        "steps": {
-          "initial_description": {
-            "type": "description",
-            "text": "The cold night air hits you as you step outside. The streets are empty save for a few guards on patrol.",
-            "next": "footsteps"
-          },
-          "footsteps": {
-            "type": "description",
-            "text": "You hear footsteps behind you.",
-            "next": "turn_choice"
-          },
-          "turn_choice": {
-            "type": "choice",
-            "choices": [
-              {
-                "text": "Turn around slowly",
-                "historyText": "You turn around slowly, cautiously facing the direction of the footsteps.",
-                "isAction": true,
-                "next": "face_follower",
-                "requires": {
-                  "trustLevel": 2
-                },
-                "isDialogue": false,
-                "historyIsDialogue": false
-              },
-              {
-                "text": "Start running",
-                "historyText": "Without hesitation, you break into a sprint.",
-                "isAction": true,
-                "next": "run_away",
-                "isDialogue": false,
-                "historyIsDialogue": false
-              }
-            ]
-          },
-          "face_follower": {
-            "type": "dialogue",
-            "speaker": "Stranger",
-            "text": "Wait! There's something you need to know!",
-            "next": "end_choice"
-          },
-          "run_away": {
-            "type": "description",
-            "text": "You break into a sprint, your footsteps echoing off the cobblestones.",
-            "next": "end_chase"
-          },
-          "end_choice": {
-            "type": "choice",
-            "choices": [
-              {
-                "text": "I'm listening",
-                "next": "reveal_secret",
-                "isDialogue": true,
-                "historyIsDialogue": true
-              },
-              {
-                "text": "Keep walking",
-                "next": "walk_away",
-                "isDialogue": true,
-                "historyIsDialogue": true
-              }
-            ]
-          },
-          "end_chase": {
-            "type": "sceneTransition",
-            "text": "Continue running",
-            "nextScene": "chase_scene"
-          },
-          "walk_away": {
-            "type": "sceneTransition",
-            "text": "Walk away",
-            "nextScene": "end_conversation"
-          },
-          "reveal_secret": {
-            "type": "sceneTransition",
-            "text": "Listen to the secret",
-            "nextScene": "secret_scene"
           }
         }
       }
