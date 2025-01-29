@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { DialogueNodeData, DescriptionNodeData, ChoiceNodeData } from '~/types';
+import { DialogueNodeData, DescriptionNodeData, ChoiceNodeData, SceneTransitionNodeData } from '~/types';
 
 export const DialogueNode: React.FC<NodeProps<DialogueNodeData>> = ({ data }) => (
     <div className="bg-gray-800 border-2 border-blue-500 rounded-lg shadow-lg min-w-[200px] max-w-[300px]">
@@ -110,8 +110,33 @@ export const ChoiceNode: React.FC<NodeProps<ChoiceNodeData>> = ({ data }) => (
     </div>
 );
 
+export const SceneTransitionNode: React.FC<NodeProps<SceneTransitionNodeData>> = ({ data }) => (
+    <div className="bg-gray-800 border-2 border-yellow-500 rounded-lg shadow-lg min-w-[200px] max-w-[300px]">
+        <Handle
+            type="target"
+            position={Position.Top}
+            style={{ background: '#555' }}
+        />
+
+        <div className="bg-gray-700 p-2 rounded-t-lg border-b border-yellow-500 drag-handle">
+            <h3 className="text-sm font-medium text-yellow-300">{data.stepId}</h3>
+        </div>
+        <div className="p-3">
+            <p className="text-sm text-white whitespace-pre-wrap">{data.text}</p>
+            <p className="text-xs text-gray-400 mt-2">Next Scene: {data.nextScene}</p>
+        </div>
+
+        <Handle
+            type="source"
+            position={Position.Bottom}
+            style={{ background: '#555' }}
+        />
+    </div>
+);
+
 export const nodeTypes = {
     dialogue: DialogueNode,
     description: DescriptionNode,
     choice: ChoiceNode,
+    sceneTransition: SceneTransitionNode,
 };

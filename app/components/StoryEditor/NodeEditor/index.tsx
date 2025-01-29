@@ -1,8 +1,17 @@
 import React from 'react';
-import type {ChoiceNodeData, DescriptionNodeData, DialogueNodeData, StoryData, StoryNode, StoryNodeData} from '~/types';
+import type {
+    ChoiceNodeData,
+    DescriptionNodeData,
+    DialogueNodeData,
+    SceneTransitionNodeData,
+    StoryData,
+    StoryNode,
+    StoryNodeData
+} from '~/types';
 import {DialogueNodeEditor} from "~/components/StoryEditor/NodeEditor/DialogueNodeEditor";
 import {ChoiceNodeEditor} from "~/components/StoryEditor/NodeEditor/ChoiceNodeEditor";
 import {DescriptionNodeEditor} from "~/components/StoryEditor/NodeEditor/DescriptionNodeEditor";
+import { SceneTransitionNodeEditor } from '~/components/StoryEditor/NodeEditor/SceneTransitionNodeEditor';
 
 interface NodeEditorProps {
     selectedNode: StoryNode | null;
@@ -21,6 +30,9 @@ const isDescriptionNode = (node: StoryNode): node is StoryNode & { data: Descrip
 
 const isChoiceNode = (node: StoryNode): node is StoryNode & { data: ChoiceNodeData } =>
     node.data.type === 'choice';
+
+const isSceneTransitionNode = (node: StoryNode): node is StoryNode & { data: SceneTransitionNodeData } =>
+    node.data.type === 'sceneTransition';
 
 export const NodeEditor: React.FC<NodeEditorProps> = ({
                                                           selectedNode,
@@ -83,6 +95,15 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
 
             {isChoiceNode(selectedNode) && (
                 <ChoiceNodeEditor
+                    node={selectedNode}
+                    onUpdateNodeData={onUpdateNodeData}
+                    availableNodes={Object.entries(storyData[currentScene].steps)
+                        .filter(([id]) => id !== selectedNode.id)}
+                />
+            )}
+
+            {isSceneTransitionNode(selectedNode) && (
+                <SceneTransitionNodeEditor
                     node={selectedNode}
                     onUpdateNodeData={onUpdateNodeData}
                     availableNodes={Object.entries(storyData[currentScene].steps)

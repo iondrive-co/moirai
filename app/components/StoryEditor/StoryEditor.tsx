@@ -269,7 +269,7 @@ export const StoryEditor = () => {
         updateNodesAndEdges();
     }, [currentScene, storyData, updateNodesAndEdges]);
 
-    const addNewNode = useCallback((type: 'dialogue' | 'description' | 'choice') => {
+    const addNewNode = useCallback((type: 'dialogue' | 'description' | 'choice' | 'sceneTransition') => {
         const newId = `${type}_${Date.now()}`;
 
         setStoryData((prev) => {
@@ -293,6 +293,12 @@ export const StoryEditor = () => {
                         historyIsDialogue: false,
                         setVariables: []
                     }]
+                };
+            } else if (type === 'sceneTransition') {
+                scene.steps[newId] = {
+                    type: 'sceneTransition',
+                    text: 'New transition',
+                    nextScene: ''
                 };
             } else {
                 scene.steps[newId] = {
@@ -415,6 +421,12 @@ export const StoryEditor = () => {
                         Add Choice
                     </button>
                     <button
+                        onClick={() => addNewNode('sceneTransition')}
+                        className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                    >
+                        Add Transition
+                    </button>
+                    <button
                         onClick={handleSave}
                         disabled={!hasChanges}
                         className={`px-3 py-1 rounded ${
@@ -455,7 +467,6 @@ export const StoryEditor = () => {
                     >
                         <Background/>
                         <Controls/>
-                        <MiniMap/>
                     </ReactFlow>
                 </div>
             </div>

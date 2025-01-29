@@ -190,6 +190,150 @@
             "text": "You find yourself in a dimly lit tavern. At the corner table sits a hooded figure who seems to be watching you.",
             "next": "stranger_initial_talk"
           }
+        },
+        "nodePositions": {
+          "opening_description": {
+            "x": -462.7607385811469,
+            "y": 49.63809523809499
+          },
+          "stranger_initial_talk": {
+            "x": -450.63168124392627,
+            "y": 274.43576287657913
+          },
+          "first_choice": {
+            "x": -428.4155490767736,
+            "y": 521.2104956268222
+          },
+          "mysterious_response": {
+            "x": -74.52789115646263,
+            "y": 237.33138969873661
+          },
+          "perceptive_response": {
+            "x": 5.567735665694741,
+            "y": 47.406180758017484
+          },
+          "lean_forward": {
+            "x": 436.1908649173956,
+            "y": 71.88493683187559
+          },
+          "high_trust_response": {
+            "x": 396.6826044703596,
+            "y": 318.2977648202138
+          },
+          "low_trust_response": {
+            "x": 759.2163265306122,
+            "y": 313.97473275024294
+          },
+          "help_choice": {
+            "x": 27.58509623257882,
+            "y": 528.7536936480548
+          },
+          "help_explanation": {
+            "x": 539.6255180522855,
+            "y": 549.8090336056122
+          },
+          "partial_explanation": {
+            "x": 800.5133936143388,
+            "y": 907.8108182814984
+          },
+          "full_explanation": {
+            "x": 910.5165588261127,
+            "y": 587.5581668182475
+          },
+          "leave_option": {
+            "x": -1.4465254443302626,
+            "y": 770.1106416997455
+          },
+          "positive_departure": {
+            "x": 204.12815768939802,
+            "y": 983.6245644586863
+          },
+          "negative_departure": {
+            "x": -113.9197517360964,
+            "y": 983.8055313687325
+          }
+        }
+      },
+      "outside_tavern": {
+        "startingStep": "initial_description",
+        "steps": {
+          "initial_description": {
+            "type": "description",
+            "text": "The cold night air hits you as you step outside. The streets are empty save for a few guards on patrol.",
+            "next": "footsteps"
+          },
+          "footsteps": {
+            "type": "description",
+            "text": "You hear footsteps behind you.",
+            "next": "turn_choice"
+          },
+          "turn_choice": {
+            "type": "choice",
+            "choices": [
+              {
+                "text": "Turn around slowly",
+                "historyText": "You turn around slowly, cautiously facing the direction of the footsteps.",
+                "isAction": true,
+                "next": "face_follower",
+                "requires": {
+                  "trustLevel": 2
+                },
+                "isDialogue": false,
+                "historyIsDialogue": false
+              },
+              {
+                "text": "Start running",
+                "historyText": "Without hesitation, you break into a sprint.",
+                "isAction": true,
+                "next": "run_away",
+                "isDialogue": false,
+                "historyIsDialogue": false
+              }
+            ]
+          },
+          "face_follower": {
+            "type": "dialogue",
+            "speaker": "Stranger",
+            "text": "Wait! There's something you need to know!",
+            "next": "end_choice"
+          },
+          "run_away": {
+            "type": "description",
+            "text": "You break into a sprint, your footsteps echoing off the cobblestones.",
+            "next": "end_chase"
+          },
+          "end_choice": {
+            "type": "choice",
+            "choices": [
+              {
+                "text": "I'm listening",
+                "next": "reveal_secret",
+                "isDialogue": true,
+                "historyIsDialogue": true
+              },
+              {
+                "text": "Keep walking",
+                "next": "walk_away",
+                "isDialogue": true,
+                "historyIsDialogue": true
+              }
+            ]
+          },
+          "end_chase": {
+            "type": "sceneTransition",
+            "text": "Continue running",
+            "nextScene": "chase_scene"
+          },
+          "walk_away": {
+            "type": "sceneTransition",
+            "text": "Walk away",
+            "nextScene": "end_conversation"
+          },
+          "reveal_secret": {
+            "type": "sceneTransition",
+            "text": "Listen to the secret",
+            "nextScene": "secret_scene"
+          }
         }
       }
     }
