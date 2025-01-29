@@ -1,11 +1,28 @@
-import { ReactFlow, Background, Controls, MiniMap, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow';
+import { ReactFlow, Background, Controls, addEdge, useNodesState, useEdgesState, Connection, MarkerType } from 'reactflow';
 import { useState, useCallback, useEffect } from 'react';
 import 'reactflow/dist/style.css';
 import type { StoryData, StoryNodeData, ChoiceStep, StoryNode, StoryEdge } from '~/types';
 import { NodeEditor } from './NodeEditor';
 import { nodeTypes } from './NodeTypes';
-import { defaultEdgeOptions } from './types';
-import { calculateNodePosition } from './utils';
+
+const defaultEdgeOptions = {
+    type: 'smoothstep' as const,
+    animated: true,
+    style: {
+        strokeWidth: 2,
+        stroke: '#94a3b8'
+    },
+    markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20
+    }
+};
+
+const calculateNodePosition = (index: number) => ({
+    x: (index % 3) * 400 + 50,
+    y: Math.floor(index / 3) * 300 + 50
+});
 
 const initialStoryData: StoryData = {
     intro: {
