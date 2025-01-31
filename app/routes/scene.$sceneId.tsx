@@ -273,7 +273,7 @@ export default function Scene() {
         if (step.conditionalTexts) {
             step.conditionalTexts.forEach(conditionalText => {
                 if (evaluateCondition(conditionalText.condition)) {
-                    finalText += ' ' + conditionalText.text;
+                    finalText += conditionalText.text;
                 }
             });
         }

@@ -5,92 +5,95 @@
       "intro": {
         "startingStep": "opening_description",
         "steps": {
+          "opening_description": {
+            "type": "description",
+            "text": "You find yourself in a dimly lit tavern, nursing your drink at the bar.",
+            "next": "notice_stranger"
+          },
+          "notice_stranger": {
+            "type": "description",
+            "text": "From the corner of your eye, you notice a hooded figure at a corner table. They seem to be watching you.",
+            "next": "first_choice"
+          },
           "first_choice": {
             "type": "choice",
             "choices": [
               {
-                "text": "Who are you?",
-                "next": "mysterious_response",
+                "text": "Approach their table and ask who they are",
+                "next": "direct_approach",
                 "setVariables": [
                   {
-                    "variableName": "trustLevel",
+                    "variableName": "approach",
                     "operator": "==",
-                    "value": 1
+                    "value": "direct"
                   }
                 ],
-                "isDialogue": true,
-                "historyIsDialogue": true
+                "isDialogue": false,
+                "historyIsDialogue": false
               },
               {
-                "text": "I noticed you watching me.",
-                "next": "perceptive_response",
+                "text": "Stay at the bar and observe them back",
+                "next": "patient_approach",
                 "setVariables": [
                   {
-                    "variableName": "trustLevel",
+                    "variableName": "approach",
                     "operator": "==",
-                    "value": 2
+                    "value": "patient"
                   }
                 ],
-                "isDialogue": true,
-                "historyIsDialogue": true
+                "isDialogue": false,
+                "historyIsDialogue": false
               }
             ]
           },
-          "mysterious_response": {
-            "type": "dialogue",
-            "speaker": "Stranger",
-            "text": "Someone who knows more than they should. And someone who needs your help.",
-            "next": "lean_forward"
-          },
-          "perceptive_response": {
-            "type": "dialogue",
-            "speaker": "Stranger",
-            "text": "Perceptive. Yes, I've been watching. Waiting for the right moment.",
-            "next": "lean_forward"
-          },
-          "lean_forward": {
+          "direct_approach": {
             "type": "description",
-            "text": "The stranger leans forward, their hood casting deep shadows across their face.",
-            "conditionalBranches": [
+            "text": "You stand up decisively and walk over to their table.",
+            "next": "stranger_reaction"
+          },
+          "patient_approach": {
+            "type": "description",
+            "text": "You pretend to focus on your drink while watching their reflection in the mirror behind the bar. After a few minutes, they stand and approach you.",
+            "next": "stranger_reaction"
+          },
+          "stranger_reaction": {
+            "type": "description",
+            "text": "The stranger sits across from you",
+            "conditionalTexts": [
               {
                 "condition": {
-                  "variableName": "trustLevel",
+                  "variableName": "approach",
                   "operator": "==",
-                  "value": 2
+                  "value": "direct"
                 },
-                "next": "high_trust_response"
+                "text": ", seeming pleased by your directness"
               },
               {
                 "condition": {
-                  "variableName": "trustLevel",
+                  "variableName": "approach",
                   "operator": "==",
-                  "value": 1
+                  "value": "patient"
                 },
-                "next": "low_trust_response"
+                "text": ". \"Your caution is admirable,\" they say softly"
               }
-            ]
+            ],
+            "next": "stranger_explanation"
           },
-          "high_trust_response": {
+          "stranger_explanation": {
             "type": "dialogue",
             "speaker": "Stranger",
-            "text": "Your keen eye serves you well. Let me be direct with you then.",
-            "next": "help_choice"
-          },
-          "low_trust_response": {
-            "type": "dialogue",
-            "speaker": "Stranger",
-            "text": "Perhaps I should explain myself more carefully...",
+            "text": "I need someone with your particular skills.",
             "next": "help_choice"
           },
           "help_choice": {
             "type": "choice",
             "choices": [
               {
-                "text": "What kind of help?",
-                "next": "help_explanation",
+                "text": "What skills would those be?",
+                "next": "skill_response",
                 "setVariables": [
                   {
-                    "variableName": "helpfulness",
+                    "variableName": "interest",
                     "operator": "==",
                     "value": true
                   }
@@ -99,11 +102,11 @@
                 "historyIsDialogue": true
               },
               {
-                "text": "I'm not interested.",
-                "next": "leave_option",
+                "text": "I'm not interested in mysterious offers.",
+                "next": "departure_scene",
                 "setVariables": [
                   {
-                    "variableName": "helpfulness",
+                    "variableName": "interest",
                     "operator": "==",
                     "value": false
                   }
@@ -113,178 +116,125 @@
               }
             ]
           },
-          "help_explanation": {
+          "skill_response": {
             "type": "description",
-            "text": "The stranger's expression changes as they consider how much to reveal.",
-            "conditionalBranches": [
+            "text": "The stranger reaches into their cloak",
+            "conditionalTexts": [
               {
                 "condition": {
-                  "variableName": "trustLevel",
+                  "variableName": "approach",
                   "operator": "==",
-                  "value": 2
+                  "value": "direct"
                 },
-                "next": "full_explanation"
+                "text": ", matching your straightforward demeanor"
               },
               {
                 "condition": {
-                  "variableName": "trustLevel",
+                  "variableName": "approach",
                   "operator": "==",
-                  "value": 1
+                  "value": "patient"
                 },
-                "next": "partial_explanation"
+                "text": ", showing careful, deliberate movements"
               }
-            ]
+            ],
+            "next": "reveal_artifact"
           },
-          "full_explanation": {
+          "reveal_artifact": {
             "type": "dialogue",
             "speaker": "Stranger",
-            "text": "The artifact is an ancient crystal, said to hold the power of a thousand suns. If it falls into the wrong hands, the consequences would be catastrophic.",
-            "next": "leave_option"
+            "text": "This crystal holds immense power. I need someone to help me protect it.",
+            "next": "departure_scene"
           },
-          "partial_explanation": {
-            "type": "dialogue",
-            "speaker": "Stranger",
-            "text": "There's an artifact of great power that needs to be protected. I believe you have the skills necessary to help me guard it.",
-            "next": "leave_option"
-          },
-          "leave_option": {
+          "departure_scene": {
             "type": "description",
-            "text": "You consider the stranger's words carefully.",
-            "conditionalBranches": [
+            "text": "You stand",
+            "conditionalTexts": [
               {
                 "condition": {
-                  "variableName": "helpfulness",
+                  "variableName": "interest",
                   "operator": "==",
                   "value": true
                 },
-                "next": "positive_departure"
+                "text": ", intrigued by the stranger's offer and the mysterious crystal. \"Let's discuss this somewhere more private,\" they suggest quietly"
               },
               {
                 "condition": {
-                  "variableName": "helpfulness",
+                  "variableName": "interest",
                   "operator": "==",
                   "value": false
                 },
-                "next": "negative_departure"
+                "text": ", making it clear you want nothing to do with this. \"Wait-\" the stranger starts to say, but you're already moving toward the door"
               }
-            ]
+            ],
+            "next": "leave_tavern"
           },
-          "positive_departure": {
-            "type": "sceneTransition",
-            "text": "Follow the stranger out of the tavern",
-            "nextScene": "outside_tavern"
-          },
-          "negative_departure": {
-            "type": "sceneTransition",
-            "text": "Leave the tavern alone",
-            "nextScene": "outside_tavern"
-          },
-          "stranger_initial_talk": {
-            "type": "dialogue",
-            "speaker": "Stranger",
-            "text": "I've been waiting for someone like you.",
-            "next": "first_choice"
-          },
-          "opening_description": {
+          "leave_tavern": {
             "type": "description",
-            "text": "You find yourself in a dimly lit tavern. At the corner table sits a hooded figure who seems to be watching you.",
-            "next": "stranger_initial_talk"
-          }
-        },
-        "nodePositions": {
-          "opening_description": {
-            "x": -462.7607385811469,
-            "y": 49.63809523809499
+            "text": "You make your way through the crowded tavern",
+            "conditionalTexts": [
+              {
+                "condition": {
+                  "variableName": "interest",
+                  "operator": "==",
+                  "value": true
+                },
+                "text": ", the stranger following close behind as you head for the exit"
+              },
+              {
+                "condition": {
+                  "variableName": "interest",
+                  "operator": "==",
+                  "value": false
+                },
+                "text": ", weaving between patrons to put as much distance as possible between you and the stranger"
+              }
+            ],
+            "next": "exit_transition"
           },
-          "stranger_initial_talk": {
-            "x": -450.63168124392627,
-            "y": 274.43576287657913
-          },
-          "first_choice": {
-            "x": -428.4155490767736,
-            "y": 521.2104956268222
-          },
-          "mysterious_response": {
-            "x": -74.52789115646263,
-            "y": 237.33138969873661
-          },
-          "perceptive_response": {
-            "x": 5.567735665694741,
-            "y": 47.406180758017484
-          },
-          "lean_forward": {
-            "x": 436.1908649173956,
-            "y": 71.88493683187559
-          },
-          "high_trust_response": {
-            "x": 396.6826044703596,
-            "y": 318.2977648202138
-          },
-          "low_trust_response": {
-            "x": 759.2163265306122,
-            "y": 313.97473275024294
-          },
-          "help_choice": {
-            "x": 27.58509623257882,
-            "y": 528.7536936480548
-          },
-          "help_explanation": {
-            "x": 539.6255180522855,
-            "y": 549.8090336056122
-          },
-          "partial_explanation": {
-            "x": 800.5133936143388,
-            "y": 907.8108182814984
-          },
-          "full_explanation": {
-            "x": 910.5165588261127,
-            "y": 587.5581668182475
-          },
-          "leave_option": {
-            "x": -1.4465254443302626,
-            "y": 770.1106416997455
-          },
-          "positive_departure": {
-            "x": 204.12815768939802,
-            "y": 983.6245644586863
-          },
-          "negative_departure": {
-            "x": -113.9197517360964,
-            "y": 983.8055313687325
+          "exit_transition": {
+            "type": "sceneTransition",
+            "text": "Step outside",
+            "nextScene": "outside_tavern"
           }
         }
       },
       "outside_tavern": {
-        "startingStep": "initial_description",
+        "startingStep": "outside_description",
         "steps": {
-          "initial_description": {
+          "outside_description": {
             "type": "description",
-            "text": "The cold night air hits you as you step outside. The streets are empty save for a few guards on patrol.",
-            "next": "footsteps"
+            "text": "The cold night air hits you as you step outside",
+            "conditionalTexts": [
+              {
+                "condition": {
+                  "variableName": "interest",
+                  "operator": "==",
+                  "value": true
+                },
+                "text": ". The streets are empty save for a few guards on patrol, and you hear the tavern door open behind you as the stranger follows"
+              },
+              {
+                "condition": {
+                  "variableName": "interest",
+                  "operator": "==",
+                  "value": false
+                },
+                "text": ". The streets are empty save for a few guards on patrol, but you hear rapid footsteps approaching from behind"
+              }
+            ],
+            "next": "street_choice"
           },
-          "footsteps": {
-            "type": "description",
-            "text": "You hear footsteps behind you.",
-            "next": "turn_choice"
-          },
-          "turn_choice": {
+          "street_choice": {
             "type": "choice",
             "choices": [
               {
-                "text": "Turn around slowly",
-                "historyText": "You turn around slowly, cautiously facing the direction of the footsteps.",
-                "isAction": true,
+                "text": "Turn and face whoever is behind you",
                 "next": "face_follower",
-                "requires": {
-                  "trustLevel": 2
-                },
                 "isDialogue": false,
                 "historyIsDialogue": false
               },
               {
                 "text": "Start running",
-                "historyText": "Without hesitation, you break into a sprint.",
-                "isAction": true,
                 "next": "run_away",
                 "isDialogue": false,
                 "historyIsDialogue": false
@@ -292,47 +242,82 @@
             ]
           },
           "face_follower": {
-            "type": "dialogue",
-            "speaker": "Stranger",
-            "text": "Wait! There's something you need to know!",
-            "next": "end_choice"
+            "type": "description",
+            "text": "You turn",
+            "conditionalTexts": [
+              {
+                "condition": {
+                  "variableName": "interest",
+                  "operator": "==",
+                  "value": true
+                },
+                "text": " to see the stranger, their expression grave but respectful"
+              },
+              {
+                "condition": {
+                  "variableName": "interest",
+                  "operator": "==",
+                  "value": false
+                },
+                "text": " to find the stranger looking somewhat desperate"
+              }
+            ],
+            "next": "final_choice"
           },
           "run_away": {
             "type": "description",
-            "text": "You break into a sprint, your footsteps echoing off the cobblestones.",
-            "next": "end_chase"
+            "text": "You break into a sprint",
+            "conditionalTexts": [
+              {
+                "condition": {
+                  "variableName": "approach",
+                  "operator": "==",
+                  "value": "direct"
+                },
+                "text": ", surprising yourself with this uncharacteristically cautious reaction"
+              },
+              {
+                "condition": {
+                  "variableName": "approach",
+                  "operator": "==",
+                  "value": "patient"
+                },
+                "text": ", your earlier caution proving well-founded"
+              }
+            ],
+            "next": "chase_scene"
           },
-          "end_choice": {
+          "final_choice": {
             "type": "choice",
             "choices": [
               {
-                "text": "I'm listening",
-                "next": "reveal_secret",
+                "text": "Let's hear what you have to say.",
+                "next": "continue_story",
                 "isDialogue": true,
                 "historyIsDialogue": true
               },
               {
-                "text": "Keep walking",
-                "next": "walk_away",
+                "text": "Leave me alone.",
+                "next": "end_conversation",
                 "isDialogue": true,
                 "historyIsDialogue": true
               }
             ]
           },
-          "end_chase": {
+          "chase_scene": {
             "type": "sceneTransition",
-            "text": "Continue running",
-            "nextScene": "chase_scene"
+            "text": "Continue running into the night",
+            "nextScene": "chase"
           },
-          "walk_away": {
+          "continue_story": {
             "type": "sceneTransition",
-            "text": "Walk away",
-            "nextScene": "end_conversation"
+            "text": "Follow the stranger to hear more",
+            "nextScene": "next_chapter"
           },
-          "reveal_secret": {
+          "end_conversation": {
             "type": "sceneTransition",
-            "text": "Listen to the secret",
-            "nextScene": "secret_scene"
+            "text": "Walk away into the night",
+            "nextScene": "ending"
           }
         }
       }
