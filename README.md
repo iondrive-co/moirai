@@ -6,6 +6,14 @@ in [cloudflare pages](https://pages.cloudflare.com/) from data in a [KV store](h
 ![Editor](/example/example-edit.png?raw=true "Editor")
 ![Viewer](/example/example-view.png?raw=true "Viewer")
 
+Variable usage is a work in progress and is much more restricted than a more general purpose framework such as 
+[Twine](https://twinery.org/). Currently supported are setting variables based on choices, and using those variables
+to:
+- Select next scene from a description
+- Conditionally display text in a description
+
+## Getting started
+
 Before anything else, you will want to create a KV store. Copy the wrangler.toml.template to wrangler.toml and run the 
 create command in there to generate the store. Next, you will need some story data to start out with, you can load the 
 example story from the screenshot above into your local KV store with `npm run story:load-example`.
@@ -26,7 +34,3 @@ When your story is ready, you can use `story:put:prod` to push it to the product
 read the production KV store back into local if you want to overwrite the local store. You will need to configure your 
 pages app in cloudflare first. The recommended approach is to fork this project in github and set up a cloudflare pages
 integration, see [here](https://developers.cloudflare.com/pages/framework-guides/deploy-a-remix-site/).
-
-TODO:
-
-- Variables for determining available choices

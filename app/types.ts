@@ -3,11 +3,6 @@ import { Node, Edge } from 'reactflow';
 export type StoryNode = Node<StoryNodeData>;
 export type StoryEdge = Edge;
 
-export interface Variable {
-    name: string;
-    value: string | number | boolean;
-}
-
 export interface VariableSetting {
     variableName: string;
     operator: '==' | '!=' | '>' | '<' | '>=' | '<=';
@@ -34,6 +29,11 @@ export interface ConditionalBranch {
     next: string;
 }
 
+export interface ConditionalText {
+    condition: Condition;
+    text: string;
+}
+
 export interface HistoryItem {
     type: 'dialogue' | 'description' | 'choice';
     speaker?: string;
@@ -56,6 +56,7 @@ export interface DescriptionStep extends BaseStep {
     type: 'description';
     next?: string;
     conditionalBranches?: ConditionalBranch[];
+    conditionalTexts?: ConditionalText[];
 }
 
 export interface ChoiceStep {
@@ -100,6 +101,7 @@ export interface DescriptionNodeData extends BaseNodeData {
     type: 'description';
     next?: string;
     conditionalBranches?: ConditionalBranch[];
+    conditionalTexts?: ConditionalText[];
 }
 
 export interface ChoiceNodeData {

@@ -11,19 +11,41 @@ export function useGameState() {
         // If variable doesn't exist yet, return false
         if (currentValue === undefined) return false;
 
+        const normalizeValue = (val: string | number | boolean): string | number => {
+            if (typeof val === 'boolean') return val ? 1 : 0;
+            if (typeof val === 'string') {
+                if (val.toLowerCase() === 'true') return 1;
+                if (val.toLowerCase() === 'false') return 0;
+                const num = Number(val);
+                return isNaN(num) ? val : num;
+            }
+            return val;
+        };
+
+        const normalizedCurrent = normalizeValue(currentValue);
+        const normalizedValue = normalizeValue(value);
+
         switch (operator) {
             case '==':
-                return currentValue === value;
+                return normalizedCurrent === normalizedValue;
             case '!=':
-                return currentValue !== value;
+                return normalizedCurrent !== normalizedValue;
             case '>':
-                return typeof currentValue === 'number' && typeof value === 'number' && currentValue > value;
+                return typeof normalizedCurrent === 'number' &&
+                    typeof normalizedValue === 'number' &&
+                    normalizedCurrent > normalizedValue;
             case '<':
-                return typeof currentValue === 'number' && typeof value === 'number' && currentValue < value;
+                return typeof normalizedCurrent === 'number' &&
+                    typeof normalizedValue === 'number' &&
+                    normalizedCurrent < normalizedValue;
             case '>=':
-                return typeof currentValue === 'number' && typeof value === 'number' && currentValue >= value;
+                return typeof normalizedCurrent === 'number' &&
+                    typeof normalizedValue === 'number' &&
+                    normalizedCurrent >= normalizedValue;
             case '<=':
-                return typeof currentValue === 'number' && typeof value === 'number' && currentValue <= value;
+                return typeof normalizedCurrent === 'number' &&
+                    typeof normalizedValue === 'number' &&
+                    normalizedCurrent <= normalizedValue;
             default:
                 return false;
         }

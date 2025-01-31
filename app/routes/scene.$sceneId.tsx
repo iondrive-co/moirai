@@ -232,7 +232,7 @@ export default function Scene() {
         } else if (isDescriptionStep(currentStep)) {
             setHistory(prev => [...prev, {
                 type: 'description',
-                text: currentStep.text
+                text: renderDescriptionText(currentStep)
             }]);
             const nextStepId = getNextStep(currentStep);
             if (nextStepId) {
@@ -265,6 +265,20 @@ export default function Scene() {
         setHistory(prev => [...prev, historyItem]);
         setCurrentStepId(choice.next);
         setAwaitingClick(true);
+    };
+
+    const renderDescriptionText = (step: DescriptionStep): string => {
+        let finalText = step.text;
+
+        if (step.conditionalTexts) {
+            step.conditionalTexts.forEach(conditionalText => {
+                if (evaluateCondition(conditionalText.condition)) {
+                    finalText += ' ' + conditionalText.text;
+                }
+            });
+        }
+
+        return finalText;
     };
 
     const handleSceneTransition = (step: SceneTransitionStep) => {
@@ -323,7 +337,7 @@ export default function Scene() {
                                     }
                                 }}
                             >
-                                {currentStep.text}
+                                {renderDescriptionText(currentStep)}
                             </button>
                         )}
 
