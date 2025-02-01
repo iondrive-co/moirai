@@ -99,7 +99,56 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                         className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
                         value={node.data.text}
                         onChange={(e) => {
-                            onUpdateNodeData(node.id, { text: e.target.value });
+                            const newText = e.target.value;
+
+                            // Find all placeholders in new text
+                            const placeholderRegex = /{{([^}]+)}}/g;
+                            const newPlaceholders = Array.from(newText.matchAll(placeholderRegex))
+                                .map(match => match[1]);
+
+                            // Get current insertion points
+                            const currentPoints = [...(node.data.insertionPoints || [])];
+                            const currentIds = currentPoints.map(point => point.id);
+
+                            // Create a new list of insertion points based on the placeholders in the text
+                            const updatedPoints: TextInsertionPoint[] = newPlaceholders.map(placeholder => {
+                                // If this is a rename of an existing point (same position, different name)
+                                const oldPointIndex = newPlaceholders.indexOf(placeholder);
+                                if (oldPointIndex < currentIds.length) {
+                                    const oldPoint = currentPoints[oldPointIndex];
+                                    if (oldPoint) {
+                                        // Return a new point with the updated ID but preserving variants
+                                        return {
+                                            ...oldPoint,
+                                            id: placeholder
+                                        };
+                                    }
+                                }
+
+                                // If this is an existing point being moved
+                                const existingPoint = currentPoints.find(p => p.id === placeholder);
+                                if (existingPoint) {
+                                    return existingPoint;
+                                }
+
+                                // Create new point if it doesn't exist
+                                return {
+                                    id: placeholder,
+                                    variants: [{
+                                        condition: {
+                                            variableName: '',
+                                            operator: '==' as const,
+                                            value: ''
+                                        },
+                                        text: ''
+                                    }]
+                                };
+                            });
+
+                            onUpdateNodeData(node.id, {
+                                text: newText,
+                                insertionPoints: updatedPoints
+                            });
                         }}
                         rows={4}
                     />

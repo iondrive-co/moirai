@@ -95,10 +95,10 @@
           },
           "skill_response": {
             "type": "description",
-            "text": "{{demeanor_desc}} the stranger reaches into their cloak and produces a glowing crystal.",
+            "text": "{{demeanor_description}} the stranger reaches into their cloak and produces a glowing crystal.",
             "insertionPoints": [
               {
-                "id": "demeanor_desc",
+                "id": "demeanor_description",
                 "variants": [
                   {
                     "condition": {
@@ -160,7 +160,8 @@
             "text": "Leave the tavern",
             "nextScene": "outside_tavern"
           }
-        }
+        },
+        "nodePositions": {}
       },
       "outside_tavern": {
         "startingStep": "outside_description",
