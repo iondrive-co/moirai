@@ -269,25 +269,53 @@ export default function Scene() {
 
     const renderDescriptionText = (step: DescriptionStep): string => {
         let finalText = step.text;
+        console.log('Starting text replacement. Initial text:', finalText);
 
         if (step.conditionalTexts) {
+            console.log('Found conditional texts:', step.conditionalTexts);
+
             // Sort conditionalTexts by id to ensure consistent replacement order
             const sortedTexts = [...step.conditionalTexts].sort((a, b) => a.id.localeCompare(b.id));
+            console.log('Sorted texts:', sortedTexts);
+
+            // First find which conditions are met
+            const replacements = new Map<string, string>();
 
             for (const conditionalText of sortedTexts) {
-                if (evaluateCondition(conditionalText.condition)) {
-                    const placeholder = `{{${conditionalText.id}}}`;
-                    finalText = finalText.replace(placeholder, conditionalText.text);
-                } else {
-                    // Remove the placeholder if condition is not met
-                    const placeholder = `{{${conditionalText.id}}}`;
-                    finalText = finalText.replace(placeholder, '');
+                console.log('Evaluating conditional:', conditionalText);
+                const result = evaluateCondition(conditionalText.condition);
+                console.log('Condition evaluation result:', result);
+
+                if (result) {
+                    // Store the replacement if condition is met
+                    replacements.set(conditionalText.id, conditionalText.text);
                 }
             }
+
+            // Then do all replacements at once
+            for (const [id, replacementText] of replacements) {
+                const placeholder = `{{${id}}}`;
+                console.log('Replacing placeholder:', placeholder, 'with:', replacementText);
+                finalText = finalText.replace(placeholder, replacementText);
+                console.log('Text after replacement:', finalText);
+            }
+
+            // Clean up any remaining unmet conditions
+            for (const conditionalText of sortedTexts) {
+                if (!replacements.has(conditionalText.id)) {
+                    const placeholder = `{{${conditionalText.id}}}`;
+                    console.log('Removing unmet condition placeholder:', placeholder);
+                    finalText = finalText.replace(placeholder, '');
+                    console.log('Text after removal:', finalText);
+                }
+            }
+        } else {
+            console.log('No conditional texts found');
         }
 
         // Clean up any remaining placeholders that might not have matching conditions
         finalText = finalText.replace(/{{condition\d+}}/g, '');
+        console.log('Final text after cleanup:', finalText);
 
         return finalText;
     };

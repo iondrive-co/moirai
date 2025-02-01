@@ -6,6 +6,9 @@ in [cloudflare pages](https://pages.cloudflare.com/) from data in a [KV store](h
 ![Editor](/example/example-edit.png?raw=true "Editor")
 ![Viewer](/example/example-view.png?raw=true "Viewer")
 
+The editor supports branching choices, dialogue with different history text, variables, and multiple scenes. The viewer 
+will format the dialogue depending on the speaker and history text, clear all the screen text on new scene transition,
+and substitute variables when necessary.
 Variable usage is a work in progress and is much more restricted than a more general purpose framework such as 
 [Twine](https://twinery.org/). Currently supported are setting variables based on choices, and using those variables
 to:
