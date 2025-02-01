@@ -26,16 +26,15 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
     const addInsertionPoint = () => {
         const existingPoints = node.data.insertionPoints || [];
         let counter = 1;
-        let defaultName = `Condition ${counter}`;
+        let id = `condition_${counter}`;
 
-        while (existingPoints.some(point => point.name === defaultName)) {
+        while (existingPoints.some(point => point.id === id)) {
             counter++;
-            defaultName = `Condition ${counter}`;
+            id = `condition_${counter}`;
         }
 
         const newInsertionPoint: TextInsertionPoint = {
-            id: defaultName.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
-            name: defaultName,
+            id,
             variants: [{
                 condition: {
                     variableName: '',
@@ -126,12 +125,24 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                 type="text"
                                 className="px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded text-sm"
                                 placeholder="Condition Name"
-                                value={point.name}
+                                value={point.id}
                                 onChange={(e) => {
-                                    const newName = e.target.value;
-                                    updateInsertionPoint(index, {
-                                        name: newName,
-                                        id: newName.toLowerCase().replace(/[^a-z0-9_]/g, '_')
+                                    const newId = e.target.value;
+                                    const oldId = point.id;
+                                    const newText = (node.data.text || '').replace(
+                                        new RegExp(`{{${oldId}}}`, 'g'),
+                                        `{{${newId}}}`
+                                    );
+
+                                    const newInsertionPoints = [...(node.data.insertionPoints || [])];
+                                    newInsertionPoints[index] = {
+                                        ...point,
+                                        id: newId
+                                    };
+
+                                    onUpdateNodeData(node.id, {
+                                        insertionPoints: newInsertionPoints,
+                                        text: newText
                                     });
                                 }}
                             />
@@ -162,7 +173,8 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                 <div key={variantIndex} className="p-2 border border-gray-700 rounded">
                                     <div className="space-y-2">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-sm font-medium text-gray-300">Variant {variantIndex + 1}</span>
+                                            <span
+                                                className="text-sm font-medium text-gray-300">Variant {variantIndex + 1}</span>
                                             <button
                                                 onClick={() => {
                                                     const newVariants = [...point.variants];

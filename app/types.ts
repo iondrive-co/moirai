@@ -46,7 +46,6 @@ export interface HistoryItem {
 
 export interface TextInsertionPoint {
     id: string;
-    name: string;
     variants: TextVariant[];
 }
 

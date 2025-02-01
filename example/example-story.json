@@ -99,7 +99,6 @@
             "insertionPoints": [
               {
                 "id": "demeanor_desc",
-                "name": "Demeanor Description",
                 "variants": [
                   {
                     "condition": {
@@ -134,7 +133,6 @@
             "insertionPoints": [
               {
                 "id": "interest_response",
-                "name": "Interest Response",
                 "variants": [
                   {
                     "condition": {
@@ -173,7 +171,6 @@
             "insertionPoints": [
               {
                 "id": "interest_scene",
-                "name": "Interest Scene",
                 "variants": [
                   {
                     "condition": {
