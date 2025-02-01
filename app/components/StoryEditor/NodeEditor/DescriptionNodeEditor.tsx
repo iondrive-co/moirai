@@ -14,44 +14,81 @@ interface DescriptionNodeEditorProps {
     availableNodes: [string, Step][];
 }
 
+interface DescriptionNodeEditorProps {
+    node: StoryNode & { data: DescriptionNodeData };
+    onUpdateNodeData: (nodeId: string, newData: Partial<StoryNodeData>) => void;
+    availableNodes: [string, Step][];
+}
+
 export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                                                                 node,
                                                                                 onUpdateNodeData,
                                                                                 availableNodes
                                                                             }) => {
+    const addConditionalText = () => {
+        const existingIds = node.data.conditionalTexts?.map(ct => ct.id) || [];
+        let counter = 1;
+        while (existingIds.includes(`condition${counter}`)) {
+            counter++;
+        }
+        const newId = `condition${counter}`;
+
+        const newConditionalText: ConditionalText = {
+            id: newId,
+            condition: {
+                variableName: '',
+                operator: '==',
+                value: ''
+            },
+            text: ''
+        };
+
+        const newConditionalTexts = [...(node.data.conditionalTexts || []), newConditionalText];
+        onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
+    };
+
+    const insertPlaceholder = (id: string) => {
+        const textarea = document.getElementById('nodeText') as HTMLTextAreaElement;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const newText = text.substring(0, start) + `{{${id}}}` + text.substring(end);
+
+        onUpdateNodeData(node.id, { text: newText });
+
+        // Reset cursor position after insert
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + id.length + 4, start + id.length + 4);
+        }, 0);
+    };
+
     return (
         <>
             {/* Base text field */}
             <div className="space-y-2">
                 <label htmlFor="nodeText" className="text-sm font-medium text-gray-300">Base Text</label>
-                <textarea
-                    id="nodeText"
-                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                    value={node.data.text}
-                    onChange={(e) => {
-                        onUpdateNodeData(node.id, { text: e.target.value });
-                    }}
-                    rows={4}
-                />
+                <div className="relative">
+                    <textarea
+                        id="nodeText"
+                        className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                        value={node.data.text}
+                        onChange={(e) => {
+                            onUpdateNodeData(node.id, { text: e.target.value });
+                        }}
+                        rows={4}
+                    />
+                </div>
             </div>
 
-            {/* Conditional Text Section */}
+        {/* Conditional Text Section */}
             <div className="space-y-4 mt-6">
                 <div className="flex justify-between items-center border-t border-gray-600 pt-4">
                     <label className="text-sm font-medium text-gray-300">Conditional Text Sections</label>
                     <button
-                        onClick={() => {
-                            const newConditionalText: ConditionalText = {
-                                condition: {
-                                    variableName: '',
-                                    operator: '==',
-                                    value: ''
-                                },
-                                text: ''
-                            };
-                            const newConditionalTexts = [...(node.data.conditionalTexts || []), newConditionalText];
-                            onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
-                        }}
+                        onClick={addConditionalText}
                         className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
                     >
                         Add Conditional Text
@@ -61,7 +98,17 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                 {node.data.conditionalTexts?.map((conditionalText, index) => (
                     <div key={index} className="space-y-2 p-3 border border-gray-600 rounded">
                         <div className="flex justify-between items-center border-b border-gray-700 pb-2">
-                            <span className="text-sm font-medium text-gray-300">Additional Text {index + 1}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-300">
+                                    Conditional Text {conditionalText.id}
+                                </span>
+                                <button
+                                    onClick={() => insertPlaceholder(conditionalText.id)}
+                                    className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                                >
+                                    Insert Placeholder
+                                </button>
+                            </div>
                             <button
                                 onClick={() => {
                                     const newConditionalTexts = [...(node.data.conditionalTexts || [])];
@@ -184,7 +231,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                 onClick={() => {
                                     const newBranches = [...(node.data.conditionalBranches || [])];
                                     newBranches.splice(index, 1);
-                                    onUpdateNodeData(node.id, { conditionalBranches: newBranches });
+                                    onUpdateNodeData(node.id, {conditionalBranches: newBranches});
                                 }}
                                 className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
                             >
@@ -206,7 +253,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                             variableName: e.target.value
                                         }
                                     };
-                                    onUpdateNodeData(node.id, { conditionalBranches: newBranches });
+                                    onUpdateNodeData(node.id, {conditionalBranches: newBranches});
                                 }}
                             />
 
@@ -223,7 +270,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                                 operator: e.target.value as Condition['operator']
                                             }
                                         };
-                                        onUpdateNodeData(node.id, { conditionalBranches: newBranches });
+                                        onUpdateNodeData(node.id, {conditionalBranches: newBranches});
                                     }}
                                 >
                                     <option value="==">=</option>
@@ -247,7 +294,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                                 value: e.target.value
                                             }
                                         };
-                                        onUpdateNodeData(node.id, { conditionalBranches: newBranches });
+                                        onUpdateNodeData(node.id, {conditionalBranches: newBranches});
                                     }}
                                 />
                             </div>
@@ -261,7 +308,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                         ...branch,
                                         next: e.target.value
                                     };
-                                    onUpdateNodeData(node.id, { conditionalBranches: newBranches });
+                                    onUpdateNodeData(node.id, {conditionalBranches: newBranches});
                                 }}
                             >
                                 <option value="">Select next node</option>
@@ -284,7 +331,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                     className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
                     value={node.data.next || ''}
                     onChange={(e) => {
-                        onUpdateNodeData(node.id, { next: e.target.value || undefined });
+                        onUpdateNodeData(node.id, {next: e.target.value || undefined});
                     }}
                 >
                     <option value="">None</option>

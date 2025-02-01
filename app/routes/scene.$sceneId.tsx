@@ -271,12 +271,23 @@ export default function Scene() {
         let finalText = step.text;
 
         if (step.conditionalTexts) {
-            step.conditionalTexts.forEach(conditionalText => {
+            // Sort conditionalTexts by id to ensure consistent replacement order
+            const sortedTexts = [...step.conditionalTexts].sort((a, b) => a.id.localeCompare(b.id));
+
+            for (const conditionalText of sortedTexts) {
                 if (evaluateCondition(conditionalText.condition)) {
-                    finalText += conditionalText.text;
+                    const placeholder = `{{${conditionalText.id}}}`;
+                    finalText = finalText.replace(placeholder, conditionalText.text);
+                } else {
+                    // Remove the placeholder if condition is not met
+                    const placeholder = `{{${conditionalText.id}}}`;
+                    finalText = finalText.replace(placeholder, '');
                 }
-            });
+            }
         }
+
+        // Clean up any remaining placeholders that might not have matching conditions
+        finalText = finalText.replace(/{{condition\d+}}/g, '');
 
         return finalText;
     };

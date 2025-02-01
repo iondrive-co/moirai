@@ -30,6 +30,7 @@ export interface ConditionalBranch {
 }
 
 export interface ConditionalText {
+    id: string;
     condition: Condition;
     text: string;
 }
@@ -54,6 +55,7 @@ export interface DialogueStep extends BaseStep {
 
 export interface DescriptionStep extends BaseStep {
     type: 'description';
+    text: string;
     next?: string;
     conditionalBranches?: ConditionalBranch[];
     conditionalTexts?: ConditionalText[];
