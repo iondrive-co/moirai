@@ -5,7 +5,9 @@ import type {
     DescriptionNodeData,
     Step,
     Condition,
-    ConditionalText, ConditionalBranch
+    ConditionalBranch,
+    TextInsertionPoint,
+    TextVariant
 } from '~/types';
 
 interface DescriptionNodeEditorProps {
@@ -21,25 +23,27 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                                                             }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const addConditionalText = () => {
-        const existingNames = node.data.conditionalTexts?.map(ct => ct.name) || [];
+    const addInsertionPoint = () => {
+        const existingPoints = node.data.insertionPoints || [];
         let counter = 1;
         let defaultName = `Condition ${counter}`;
 
-        while (existingNames.includes(defaultName)) {
+        while (existingPoints.some(point => point.name === defaultName)) {
             counter++;
             defaultName = `Condition ${counter}`;
         }
 
-        const newConditionalText: ConditionalText = {
-            id: defaultName,
+        const newInsertionPoint: TextInsertionPoint = {
+            id: defaultName.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
             name: defaultName,
-            condition: {
-                variableName: '',
-                operator: '==',
-                value: ''
-            },
-            text: ''
+            variants: [{
+                condition: {
+                    variableName: '',
+                    operator: '==',
+                    value: ''
+                },
+                text: ''
+            }]
         };
 
         // Get cursor position or end of text
@@ -52,46 +56,36 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
         }
 
         // Insert the placeholder at the cursor position or end
-        const placeholder = `{{${defaultName}}}`;
+        const placeholder = `{{${newInsertionPoint.id}}}`;
         const newText = currentText.slice(0, insertPosition) + placeholder + currentText.slice(insertPosition);
 
-        const newConditionalTexts = [...(node.data.conditionalTexts || []), newConditionalText];
+        const newInsertionPoints = [...(node.data.insertionPoints || []), newInsertionPoint];
         onUpdateNodeData(node.id, {
-            conditionalTexts: newConditionalTexts,
+            insertionPoints: newInsertionPoints,
             text: newText
         });
     };
 
-    const updateConditionalTextId = (oldId: string, newName: string, index: number) => {
-        // Make sure the new name is unique
-        const existingNames = node.data.conditionalTexts?.map(ct => ct.name) || [];
-        let uniqueName = newName;
-        let counter = 1;
-        while (existingNames.filter((name, i) => i !== index).includes(uniqueName)) {
-            uniqueName = `${newName} ${counter}`;
-            counter++;
+    const updateInsertionPoint = (index: number, updates: Partial<TextInsertionPoint>) => {
+        const newInsertionPoints = [...(node.data.insertionPoints || [])];
+        const oldPoint = newInsertionPoints[index];
+        newInsertionPoints[index] = { ...oldPoint, ...updates };
+
+        // If the ID changed, update the placeholder in the text
+        if (updates.id && updates.id !== oldPoint.id) {
+            const newText = (node.data.text || '').replace(
+                new RegExp(`{{${oldPoint.id}}}`, 'g'),
+                `{{${updates.id}}}`
+            );
+            onUpdateNodeData(node.id, {
+                insertionPoints: newInsertionPoints,
+                text: newText
+            });
+        } else {
+            onUpdateNodeData(node.id, {
+                insertionPoints: newInsertionPoints
+            });
         }
-
-        // Update the ID in the condition
-        const newConditionalTexts = [...(node.data.conditionalTexts || [])];
-        newConditionalTexts[index] = {
-            ...newConditionalTexts[index],
-            id: uniqueName,
-            name: uniqueName
-        };
-
-        // Update all occurrences of the old placeholder in the text
-        const newText = (node.data.text || '').replace(
-            new RegExp(`{{${oldId}}}`, 'g'),
-            `{{${uniqueName}}}`
-        );
-
-        onUpdateNodeData(node.id, {
-            conditionalTexts: newConditionalTexts,
-            text: newText
-        });
-
-        return uniqueName;
     };
 
     return (
@@ -116,49 +110,44 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
             {/* Conditional Text Section */}
             <div className="space-y-4 mt-6">
                 <div className="flex justify-between items-center border-t border-gray-600 pt-4">
-                    <label className="text-sm font-medium text-gray-300">Conditional Text Sections</label>
+                    <label className="text-sm font-medium text-gray-300">Conditional Text</label>
                     <button
-                        onClick={addConditionalText}
+                        onClick={addInsertionPoint}
                         className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
                     >
-                        Add Conditional Text
+                        Add Condition
                     </button>
                 </div>
 
-                {node.data.conditionalTexts?.map((conditionalText, index) => (
+                {node.data.insertionPoints?.map((point, index) => (
                     <div key={index} className="space-y-2 p-3 border border-gray-600 rounded">
                         <div className="flex justify-between items-center border-b border-gray-700 pb-2">
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="text"
-                                    className="px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                    placeholder="Condition Name"
-                                    value={conditionalText.name}
-                                    onChange={(e) => {
-                                        const newName = e.target.value;
-                                        const newId = updateConditionalTextId(conditionalText.id, newName, index);
-                                        const newConditionalTexts = [...(node.data.conditionalTexts || [])];
-                                        newConditionalTexts[index] = {
-                                            ...conditionalText,
-                                            id: newId,
-                                            name: newName
-                                        };
-                                        onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
-                                    }}
-                                />
-                            </div>
+                            <input
+                                type="text"
+                                className="px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                placeholder="Condition Name"
+                                value={point.name}
+                                onChange={(e) => {
+                                    const newName = e.target.value;
+                                    updateInsertionPoint(index, {
+                                        name: newName,
+                                        id: newName.toLowerCase().replace(/[^a-z0-9_]/g, '_')
+                                    });
+                                }}
+                            />
                             <button
                                 onClick={() => {
-                                    // Remove this condition's placeholder from the text
+                                    const newInsertionPoints = [...(node.data.insertionPoints || [])];
+                                    newInsertionPoints.splice(index, 1);
+
+                                    // Remove this point's placeholder from the text
                                     const newText = (node.data.text || '').replace(
-                                        new RegExp(`{{${conditionalText.id}}}`, 'g'),
+                                        new RegExp(`{{${point.id}}}`, 'g'),
                                         ''
                                     );
 
-                                    const newConditionalTexts = [...(node.data.conditionalTexts || [])];
-                                    newConditionalTexts.splice(index, 1);
                                     onUpdateNodeData(node.id, {
-                                        conditionalTexts: newConditionalTexts,
+                                        insertionPoints: newInsertionPoints,
                                         text: newText
                                     });
                                 }}
@@ -168,80 +157,119 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                             </button>
                         </div>
 
-                        <div className="space-y-2">
-                            <input
-                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                placeholder="Variable name"
-                                value={conditionalText.condition.variableName}
-                                onChange={(e) => {
-                                    const newConditionalTexts = [...(node.data.conditionalTexts || [])];
-                                    newConditionalTexts[index] = {
-                                        ...conditionalText,
+                        <div className="space-y-4">
+                            {point.variants.map((variant, variantIndex) => (
+                                <div key={variantIndex} className="p-2 border border-gray-700 rounded">
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm font-medium text-gray-300">Variant {variantIndex + 1}</span>
+                                            <button
+                                                onClick={() => {
+                                                    const newVariants = [...point.variants];
+                                                    newVariants.splice(variantIndex, 1);
+                                                    updateInsertionPoint(index, { variants: newVariants });
+                                                }}
+                                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                                            >
+                                                Remove Variant
+                                            </button>
+                                        </div>
+
+                                        <input
+                                            className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                            placeholder="Variable name"
+                                            value={variant.condition.variableName}
+                                            onChange={(e) => {
+                                                const newVariants = [...point.variants];
+                                                newVariants[variantIndex] = {
+                                                    ...variant,
+                                                    condition: {
+                                                        ...variant.condition,
+                                                        variableName: e.target.value
+                                                    }
+                                                };
+                                                updateInsertionPoint(index, { variants: newVariants });
+                                            }}
+                                        />
+
+                                        <div className="flex gap-2">
+                                            <select
+                                                className="w-24 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                                value={variant.condition.operator}
+                                                onChange={(e) => {
+                                                    const newVariants = [...point.variants];
+                                                    newVariants[variantIndex] = {
+                                                        ...variant,
+                                                        condition: {
+                                                            ...variant.condition,
+                                                            operator: e.target.value as Condition['operator']
+                                                        }
+                                                    };
+                                                    updateInsertionPoint(index, { variants: newVariants });
+                                                }}
+                                            >
+                                                <option value="==">=</option>
+                                                <option value="!=">≠</option>
+                                                <option value=">">&gt;</option>
+                                                <option value="<">&lt;</option>
+                                                <option value=">=">&gt;=</option>
+                                                <option value="<=">&lt;=</option>
+                                            </select>
+
+                                            <input
+                                                className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                                placeholder="Value"
+                                                value={String(variant.condition.value)}
+                                                onChange={(e) => {
+                                                    const newVariants = [...point.variants];
+                                                    newVariants[variantIndex] = {
+                                                        ...variant,
+                                                        condition: {
+                                                            ...variant.condition,
+                                                            value: e.target.value
+                                                        }
+                                                    };
+                                                    updateInsertionPoint(index, { variants: newVariants });
+                                                }}
+                                            />
+                                        </div>
+
+                                        <textarea
+                                            className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                            placeholder="Text for this condition"
+                                            value={variant.text}
+                                            onChange={(e) => {
+                                                const newVariants = [...point.variants];
+                                                newVariants[variantIndex] = {
+                                                    ...variant,
+                                                    text: e.target.value
+                                                };
+                                                updateInsertionPoint(index, { variants: newVariants });
+                                            }}
+                                            rows={2}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button
+                                onClick={() => {
+                                    const newVariant: TextVariant = {
                                         condition: {
-                                            ...conditionalText.condition,
-                                            variableName: e.target.value
-                                        }
+                                            variableName: '',
+                                            operator: '==',
+                                            value: ''
+                                        },
+                                        text: ''
                                     };
-                                    onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
+                                    updateInsertionPoint(index, {
+                                        variants: [...point.variants, newVariant]
+                                    });
                                 }}
-                            />
-
-                            <div className="flex gap-2">
-                                <select
-                                    className="w-24 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                    value={conditionalText.condition.operator}
-                                    onChange={(e) => {
-                                        const newConditionalTexts = [...(node.data.conditionalTexts || [])];
-                                        newConditionalTexts[index] = {
-                                            ...conditionalText,
-                                            condition: {
-                                                ...conditionalText.condition,
-                                                operator: e.target.value as Condition['operator']
-                                            }
-                                        };
-                                        onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
-                                    }}
-                                >
-                                    <option value="==">=</option>
-                                    <option value="!=">≠</option>
-                                    <option value=">">&gt;</option>
-                                    <option value="<">&lt;</option>
-                                    <option value=">=">&gt;=</option>
-                                    <option value="<=">&lt;=</option>
-                                </select>
-
-                                <input
-                                    className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                    placeholder="Value"
-                                    value={String(conditionalText.condition.value)}
-                                    onChange={(e) => {
-                                        const newConditionalTexts = [...(node.data.conditionalTexts || [])];
-                                        newConditionalTexts[index] = {
-                                            ...conditionalText,
-                                            condition: {
-                                                ...conditionalText.condition,
-                                                value: e.target.value
-                                            }
-                                        };
-                                        onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
-                                    }}
-                                />
-                            </div>
-
-                            <textarea
-                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                placeholder="Text to show when condition is met"
-                                value={conditionalText.text}
-                                onChange={(e) => {
-                                    const newConditionalTexts = [...(node.data.conditionalTexts || [])];
-                                    newConditionalTexts[index] = {
-                                        ...conditionalText,
-                                        text: e.target.value
-                                    };
-                                    onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
-                                }}
-                                rows={2}
-                            />
+                                className="w-full px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                            >
+                                Add Text Variant
+                            </button>
                         </div>
                     </div>
                 ))}
@@ -262,7 +290,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                 next: ''
                             };
                             const newBranches = [...(node.data.conditionalBranches || []), newBranch];
-                            onUpdateNodeData(node.id, {conditionalBranches: newBranches});
+                            onUpdateNodeData(node.id, { conditionalBranches: newBranches });
                         }}
                         className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
                     >
@@ -278,7 +306,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                 onClick={() => {
                                     const newBranches = [...(node.data.conditionalBranches || [])];
                                     newBranches.splice(index, 1);
-                                    onUpdateNodeData(node.id, {conditionalBranches: newBranches});
+                                    onUpdateNodeData(node.id, { conditionalBranches: newBranches });
                                 }}
                                 className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
                             >
@@ -300,7 +328,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                             variableName: e.target.value
                                         }
                                     };
-                                    onUpdateNodeData(node.id, {conditionalBranches: newBranches});
+                                    onUpdateNodeData(node.id, { conditionalBranches: newBranches });
                                 }}
                             />
 
@@ -317,7 +345,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                                 operator: e.target.value as Condition['operator']
                                             }
                                         };
-                                        onUpdateNodeData(node.id, {conditionalBranches: newBranches});
+                                        onUpdateNodeData(node.id, { conditionalBranches: newBranches });
                                     }}
                                 >
                                     <option value="==">=</option>
@@ -341,7 +369,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                                 value: e.target.value
                                             }
                                         };
-                                        onUpdateNodeData(node.id, {conditionalBranches: newBranches});
+                                        onUpdateNodeData(node.id, { conditionalBranches: newBranches });
                                     }}
                                 />
                             </div>
@@ -355,7 +383,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                         ...branch,
                                         next: e.target.value
                                     };
-                                    onUpdateNodeData(node.id, {conditionalBranches: newBranches});
+                                    onUpdateNodeData(node.id, { conditionalBranches: newBranches });
                                 }}
                             >
                                 <option value="">Select next node</option>
@@ -378,7 +406,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                     className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
                     value={node.data.next || ''}
                     onChange={(e) => {
-                        onUpdateNodeData(node.id, {next: e.target.value || undefined});
+                        onUpdateNodeData(node.id, { next: e.target.value || undefined });
                     }}
                 >
                     <option value="">None</option>
@@ -391,4 +419,4 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
             </div>
         </>
     );
-    };
+};

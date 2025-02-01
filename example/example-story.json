@@ -96,24 +96,28 @@
           "skill_response": {
             "type": "description",
             "text": "{{demeanor_desc}} the stranger reaches into their cloak and produces a glowing crystal.",
-            "conditionalTexts": [
+            "insertionPoints": [
               {
                 "id": "demeanor_desc",
-                "condition": {
-                  "variableName": "approach",
-                  "operator": "==",
-                  "value": "direct"
-                },
-                "text": "With swift, purposeful movements,"
-              },
-              {
-                "id": "demeanor_desc",
-                "condition": {
-                  "variableName": "approach",
-                  "operator": "==",
-                  "value": "patient"
-                },
-                "text": "Moving with deliberate care,"
+                "name": "Demeanor Description",
+                "variants": [
+                  {
+                    "condition": {
+                      "variableName": "approach",
+                      "operator": "==",
+                      "value": "direct"
+                    },
+                    "text": "With swift, purposeful movements,"
+                  },
+                  {
+                    "condition": {
+                      "variableName": "approach",
+                      "operator": "==",
+                      "value": "patient"
+                    },
+                    "text": "Moving with deliberate care,"
+                  }
+                ]
               }
             ],
             "next": "reveal_artifact"
@@ -127,24 +131,28 @@
           "departure_scene": {
             "type": "description",
             "text": "You stand from your seat. {{interest_response}}",
-            "conditionalTexts": [
+            "insertionPoints": [
               {
                 "id": "interest_response",
-                "condition": {
-                  "variableName": "interest",
-                  "operator": "==",
-                  "value": true
-                },
-                "text": "The stranger's offer has piqued your curiosity, and they gesture toward a more private area to continue the discussion."
-              },
-              {
-                "id": "interest_response",
-                "condition": {
-                  "variableName": "interest",
-                  "operator": "==",
-                  "value": false
-                },
-                "text": "You've heard enough mysteries for one night, and you begin making your way to the door despite the stranger's protests."
+                "name": "Interest Response",
+                "variants": [
+                  {
+                    "condition": {
+                      "variableName": "interest",
+                      "operator": "==",
+                      "value": true
+                    },
+                    "text": "The stranger's offer has piqued your curiosity, and they gesture toward a more private area to continue the discussion."
+                  },
+                  {
+                    "condition": {
+                      "variableName": "interest",
+                      "operator": "==",
+                      "value": false
+                    },
+                    "text": "You've heard enough mysteries for one night, and you begin making your way to the door despite the stranger's protests."
+                  }
+                ]
               }
             ],
             "next": "exit_transition"
@@ -162,24 +170,28 @@
           "outside_description": {
             "type": "description",
             "text": "The cold night air hits you as you step outside. {{interest_scene}}",
-            "conditionalTexts": [
+            "insertionPoints": [
               {
                 "id": "interest_scene",
-                "condition": {
-                  "variableName": "interest",
-                  "operator": "==",
-                  "value": true
-                },
-                "text": "The streets are quiet, perfect for a clandestine meeting."
-              },
-              {
-                "id": "interest_scene",
-                "condition": {
-                  "variableName": "interest",
-                  "operator": "==",
-                  "value": false
-                },
-                "text": "You hear rapid footsteps following you out of the tavern."
+                "name": "Interest Scene",
+                "variants": [
+                  {
+                    "condition": {
+                      "variableName": "interest",
+                      "operator": "==",
+                      "value": true
+                    },
+                    "text": "The streets are quiet, perfect for a clandestine meeting."
+                  },
+                  {
+                    "condition": {
+                      "variableName": "interest",
+                      "operator": "==",
+                      "value": false
+                    },
+                    "text": "You hear rapid footsteps following you out of the tavern."
+                  }
+                ]
               }
             ],
             "next": "final_choice"

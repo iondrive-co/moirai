@@ -24,7 +24,7 @@ export const loader: LoaderFunction = async ({ params, context }) => {
     try {
         const sceneId = params['*'];
         const isDevelopment = context.env.ENV === 'development';
-        console.log('Context structure:', JSON.stringify({
+        console.debug('Context structure:', JSON.stringify({
             hasEnv: !!context.env,
             hasCloudflareEnv: !!context.cloudflare?.env,
             envValue: context.env.ENV,
@@ -204,11 +204,11 @@ export default function Scene() {
             // Find the first matching condition
             const matchingBranch = currentStep.conditionalBranches.find(branch => {
                 const result = evaluateCondition(branch.condition);
-                console.log('Evaluating condition:', branch.condition, 'Result:', result);
+                console.debug('Evaluating condition:', branch.condition, 'Result:', result);
                 return result;
             });
             if (matchingBranch) {
-                console.log('Found matching branch:', matchingBranch);
+                console.debug('Found matching branch:', matchingBranch);
                 return matchingBranch.next;
             }
         }
@@ -251,7 +251,7 @@ export default function Scene() {
     }) => {
         // Set variables if they exist
         if (choice.setVariables?.length) {
-            console.log('Setting variables:', choice.setVariables);
+            console.debug('Setting variables:', choice.setVariables);
             setMultipleVariables(choice.setVariables);
         }
 
@@ -269,53 +269,28 @@ export default function Scene() {
 
     const renderDescriptionText = (step: DescriptionStep): string => {
         let finalText = step.text;
-        console.log('Starting text replacement. Initial text:', finalText);
 
-        if (step.conditionalTexts) {
-            console.log('Found conditional texts:', step.conditionalTexts);
+        if (step.insertionPoints) {
+            for (const point of step.insertionPoints) {
+                // Find the first matching variant (changed from branch)
+                const matchingVariant = point.variants.find(variant =>
+                    evaluateCondition(variant.condition)
+                );
 
-            // Sort conditionalTexts by id to ensure consistent replacement order
-            const sortedTexts = [...step.conditionalTexts].sort((a, b) => a.id.localeCompare(b.id));
-            console.log('Sorted texts:', sortedTexts);
-
-            // First find which conditions are met
-            const replacements = new Map<string, string>();
-
-            for (const conditionalText of sortedTexts) {
-                console.log('Evaluating conditional:', conditionalText);
-                const result = evaluateCondition(conditionalText.condition);
-                console.log('Condition evaluation result:', result);
-
-                if (result) {
-                    // Store the replacement if condition is met
-                    replacements.set(conditionalText.id, conditionalText.text);
+                if (matchingVariant) {
+                    finalText = finalText.replace(
+                        new RegExp(`{{${point.id}}}`, 'g'),
+                        matchingVariant.text
+                    );
+                } else {
+                    // Remove the placeholder if no conditions match
+                    finalText = finalText.replace(
+                        new RegExp(`{{${point.id}}}`, 'g'),
+                        ''
+                    );
                 }
             }
-
-            // Then do all replacements at once
-            for (const [id, replacementText] of replacements) {
-                const placeholder = `{{${id}}}`;
-                console.log('Replacing placeholder:', placeholder, 'with:', replacementText);
-                finalText = finalText.replace(placeholder, replacementText);
-                console.log('Text after replacement:', finalText);
-            }
-
-            // Clean up any remaining unmet conditions
-            for (const conditionalText of sortedTexts) {
-                if (!replacements.has(conditionalText.id)) {
-                    const placeholder = `{{${conditionalText.id}}}`;
-                    console.log('Removing unmet condition placeholder:', placeholder);
-                    finalText = finalText.replace(placeholder, '');
-                    console.log('Text after removal:', finalText);
-                }
-            }
-        } else {
-            console.log('No conditional texts found');
         }
-
-        // Clean up any remaining placeholders that might not have matching conditions
-        finalText = finalText.replace(/{{condition\d+}}/g, '');
-        console.log('Final text after cleanup:', finalText);
 
         return finalText;
     };

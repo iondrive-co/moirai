@@ -44,6 +44,22 @@ export interface HistoryItem {
     isDialogue?: boolean;
 }
 
+export interface TextInsertionPoint {
+    id: string;
+    name: string;
+    variants: TextVariant[];
+}
+
+export interface TextVariant {
+    condition: Condition;
+    text: string;
+}
+
+export interface TextBranch {
+    condition: Condition;
+    text: string;
+}
+
 export interface BaseStep {
     text: string;
 }
@@ -59,7 +75,7 @@ export interface DescriptionStep extends BaseStep {
     text: string;
     next?: string;
     conditionalBranches?: ConditionalBranch[];
-    conditionalTexts?: ConditionalText[];
+    insertionPoints?: TextInsertionPoint[];
 }
 
 export interface ChoiceStep {
@@ -104,7 +120,7 @@ export interface DescriptionNodeData extends BaseNodeData {
     type: 'description';
     next?: string;
     conditionalBranches?: ConditionalBranch[];
-    conditionalTexts?: ConditionalText[];
+    insertionPoints?: TextInsertionPoint[];
 }
 
 export interface ChoiceNodeData {
