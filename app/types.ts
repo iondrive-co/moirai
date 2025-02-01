@@ -31,6 +31,7 @@ export interface ConditionalBranch {
 
 export interface ConditionalText {
     id: string;
+    name: string;
     condition: Condition;
     text: string;
 }

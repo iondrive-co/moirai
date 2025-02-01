@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import type {
     StoryNode,
     StoryNodeData,
@@ -14,27 +14,26 @@ interface DescriptionNodeEditorProps {
     availableNodes: [string, Step][];
 }
 
-interface DescriptionNodeEditorProps {
-    node: StoryNode & { data: DescriptionNodeData };
-    onUpdateNodeData: (nodeId: string, newData: Partial<StoryNodeData>) => void;
-    availableNodes: [string, Step][];
-}
-
 export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                                                                 node,
                                                                                 onUpdateNodeData,
                                                                                 availableNodes
                                                                             }) => {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
     const addConditionalText = () => {
-        const existingIds = node.data.conditionalTexts?.map(ct => ct.id) || [];
+        const existingNames = node.data.conditionalTexts?.map(ct => ct.name) || [];
         let counter = 1;
-        while (existingIds.includes(`condition${counter}`)) {
+        let defaultName = `Condition ${counter}`;
+
+        while (existingNames.includes(defaultName)) {
             counter++;
+            defaultName = `Condition ${counter}`;
         }
-        const newId = `condition${counter}`;
 
         const newConditionalText: ConditionalText = {
-            id: newId,
+            id: defaultName,
+            name: defaultName,
             condition: {
                 variableName: '',
                 operator: '==',
@@ -43,26 +42,56 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
             text: ''
         };
 
+        // Get cursor position or end of text
+        const textarea = textareaRef.current;
+        const currentText = node.data.text || '';
+        let insertPosition = currentText.length;
+
+        if (textarea) {
+            insertPosition = textarea.selectionStart || currentText.length;
+        }
+
+        // Insert the placeholder at the cursor position or end
+        const placeholder = `{{${defaultName}}}`;
+        const newText = currentText.slice(0, insertPosition) + placeholder + currentText.slice(insertPosition);
+
         const newConditionalTexts = [...(node.data.conditionalTexts || []), newConditionalText];
-        onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
+        onUpdateNodeData(node.id, {
+            conditionalTexts: newConditionalTexts,
+            text: newText
+        });
     };
 
-    const insertPlaceholder = (id: string) => {
-        const textarea = document.getElementById('nodeText') as HTMLTextAreaElement;
-        if (!textarea) return;
+    const updateConditionalTextId = (oldId: string, newName: string, index: number) => {
+        // Make sure the new name is unique
+        const existingNames = node.data.conditionalTexts?.map(ct => ct.name) || [];
+        let uniqueName = newName;
+        let counter = 1;
+        while (existingNames.filter((name, i) => i !== index).includes(uniqueName)) {
+            uniqueName = `${newName} ${counter}`;
+            counter++;
+        }
 
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        const newText = text.substring(0, start) + `{{${id}}}` + text.substring(end);
+        // Update the ID in the condition
+        const newConditionalTexts = [...(node.data.conditionalTexts || [])];
+        newConditionalTexts[index] = {
+            ...newConditionalTexts[index],
+            id: uniqueName,
+            name: uniqueName
+        };
 
-        onUpdateNodeData(node.id, { text: newText });
+        // Update all occurrences of the old placeholder in the text
+        const newText = (node.data.text || '').replace(
+            new RegExp(`{{${oldId}}}`, 'g'),
+            `{{${uniqueName}}}`
+        );
 
-        // Reset cursor position after insert
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start + id.length + 4, start + id.length + 4);
-        }, 0);
+        onUpdateNodeData(node.id, {
+            conditionalTexts: newConditionalTexts,
+            text: newText
+        });
+
+        return uniqueName;
     };
 
     return (
@@ -73,6 +102,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                 <div className="relative">
                     <textarea
                         id="nodeText"
+                        ref={textareaRef}
                         className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
                         value={node.data.text}
                         onChange={(e) => {
@@ -83,7 +113,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                 </div>
             </div>
 
-        {/* Conditional Text Section */}
+            {/* Conditional Text Section */}
             <div className="space-y-4 mt-6">
                 <div className="flex justify-between items-center border-t border-gray-600 pt-4">
                     <label className="text-sm font-medium text-gray-300">Conditional Text Sections</label>
@@ -99,21 +129,38 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                     <div key={index} className="space-y-2 p-3 border border-gray-600 rounded">
                         <div className="flex justify-between items-center border-b border-gray-700 pb-2">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-300">
-                                    Conditional Text {conditionalText.id}
-                                </span>
-                                <button
-                                    onClick={() => insertPlaceholder(conditionalText.id)}
-                                    className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                                >
-                                    Insert Placeholder
-                                </button>
+                                <input
+                                    type="text"
+                                    className="px-2 py-1 bg-gray-700 text-white border border-gray-600 rounded text-sm"
+                                    placeholder="Condition Name"
+                                    value={conditionalText.name}
+                                    onChange={(e) => {
+                                        const newName = e.target.value;
+                                        const newId = updateConditionalTextId(conditionalText.id, newName, index);
+                                        const newConditionalTexts = [...(node.data.conditionalTexts || [])];
+                                        newConditionalTexts[index] = {
+                                            ...conditionalText,
+                                            id: newId,
+                                            name: newName
+                                        };
+                                        onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
+                                    }}
+                                />
                             </div>
                             <button
                                 onClick={() => {
+                                    // Remove this condition's placeholder from the text
+                                    const newText = (node.data.text || '').replace(
+                                        new RegExp(`{{${conditionalText.id}}}`, 'g'),
+                                        ''
+                                    );
+
                                     const newConditionalTexts = [...(node.data.conditionalTexts || [])];
                                     newConditionalTexts.splice(index, 1);
-                                    onUpdateNodeData(node.id, { conditionalTexts: newConditionalTexts });
+                                    onUpdateNodeData(node.id, {
+                                        conditionalTexts: newConditionalTexts,
+                                        text: newText
+                                    });
                                 }}
                                 className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
                             >
@@ -215,7 +262,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                 next: ''
                             };
                             const newBranches = [...(node.data.conditionalBranches || []), newBranch];
-                            onUpdateNodeData(node.id, { conditionalBranches: newBranches });
+                            onUpdateNodeData(node.id, {conditionalBranches: newBranches});
                         }}
                         className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
                     >
@@ -344,4 +391,4 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
             </div>
         </>
     );
-};
+    };
