@@ -118,142 +118,140 @@ export const ChoiceNodeEditor: React.FC<ChoiceNodeEditorProps> = ({
         >
             <div className="space-y-4">
                 {node.data.choices.map((choice: Choice, choiceIndex: number) => (
-                    <div
+                    <CollapsiblePanel
                         key={choiceIndex}
-                        className="space-y-2 p-3 border border-gray-600 rounded"
-                    >
-                        <div className="flex justify-between items-center border-b border-gray-700 pb-2">
-                            <span className="text-sm font-medium text-gray-300">
-                                Choice {choiceIndex + 1}
-                            </span>
+                        title={`Choice ${choiceIndex + 1}${choice.text ? `: ${choice.text.slice(0, 30)}${choice.text.length > 30 ? '...' : ''}` : ''}`}
+                        defaultOpen={false}
+                        rightElement={
                             <button
                                 onClick={() => removeChoice(choiceIndex)}
                                 className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
                             >
                                 Remove
                             </button>
-                        </div>
-
-                        {/* Choice Text */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300">Choice Text</label>
-                            <textarea
-                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                value={choice.text}
-                                onChange={(e) => updateChoice(choiceIndex, { text: e.target.value })}
-                                rows={2}
-                                placeholder="Choice text"
-                            />
-                        </div>
-
-                        {/* Choice Text Type */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300">Choice Type</label>
-                            <div className="flex gap-2">
-                                <button
-                                    className={`flex-1 px-2 py-1 rounded text-sm ${
-                                        choice.isDialogue
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                    }`}
-                                    onClick={() => updateChoice(choiceIndex, { isDialogue: true })}
-                                >
-                                    Dialogue
-                                </button>
-                                <button
-                                    className={`flex-1 px-2 py-1 rounded text-sm ${
-                                        !choice.isDialogue
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                    }`}
-                                    onClick={() => updateChoice(choiceIndex, { isDialogue: false })}
-                                >
-                                    Descriptive
-                                </button>
+                        }
+                    >
+                        <div className="space-y-4 p-3 border border-gray-600 rounded">
+                            {/* Choice Text */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300">Choice Text</label>
+                                <textarea
+                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                    value={choice.text}
+                                    onChange={(e) => updateChoice(choiceIndex, { text: e.target.value })}
+                                    rows={2}
+                                    placeholder="Choice text"
+                                />
                             </div>
-                        </div>
 
-                        {/* History Text */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300">History Text</label>
-                            <textarea
-                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                                value={choice.historyText || ''}
-                                onChange={(e) => updateChoice(choiceIndex, { historyText: e.target.value })}
-                                rows={2}
-                                placeholder="Text to show in history (optional)"
-                            />
-
-                            {/* History Text Type */}
-                            <div className="flex gap-2">
-                                <button
-                                    className={`flex-1 px-2 py-1 rounded text-sm ${
-                                        choice.historyIsDialogue
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                    }`}
-                                    onClick={() => updateChoice(choiceIndex, { historyIsDialogue: true })}
-                                >
-                                    Dialogue History
-                                </button>
-                                <button
-                                    className={`flex-1 px-2 py-1 rounded text-sm ${
-                                        !choice.historyIsDialogue
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                    }`}
-                                    onClick={() => updateChoice(choiceIndex, { historyIsDialogue: false })}
-                                >
-                                    Descriptive History
-                                </button>
+                            {/* Choice Text Type */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300">Choice Type</label>
+                                <div className="flex gap-2">
+                                    <button
+                                        className={`flex-1 px-2 py-1 rounded text-sm ${
+                                            choice.isDialogue
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                        }`}
+                                        onClick={() => updateChoice(choiceIndex, { isDialogue: true })}
+                                    >
+                                        Dialogue
+                                    </button>
+                                    <button
+                                        className={`flex-1 px-2 py-1 rounded text-sm ${
+                                            !choice.isDialogue
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                        }`}
+                                        onClick={() => updateChoice(choiceIndex, { isDialogue: false })}
+                                    >
+                                        Descriptive
+                                    </button>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Next Node */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300">Next Node</label>
-                            <NodeSelect
-                                value={choice.next}
-                                onChange={(value) => updateChoice(choiceIndex, { next: value })}
-                                availableNodes={availableNodes}
-                                placeholder="Select next node"
-                            />
-                        </div>
+                            {/* History Text */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300">History Text</label>
+                                <textarea
+                                    className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                    value={choice.historyText || ''}
+                                    onChange={(e) => updateChoice(choiceIndex, { historyText: e.target.value })}
+                                    rows={2}
+                                    placeholder="Text to show in history (optional)"
+                                />
 
-                        {/* Variable Settings */}
-                        <CollapsiblePanel
-                            title="Set Variables"
-                            defaultOpen={false}
-                            rightElement={
-                                <button
-                                    onClick={() => addVariableToChoice(choiceIndex)}
-                                    className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                                >
-                                    Add Variable
-                                </button>
-                            }
-                        >
-                            <div className="space-y-4">
-                                {choice.setVariables?.map((varSetting, varIndex) => (
-                                    <div key={varIndex} className="flex flex-col gap-2 p-2 border border-gray-700 rounded">
-                                        <div className="flex justify-between items-center">
-                                            <label className="text-sm font-medium text-gray-300">Variable {varIndex + 1}</label>
-                                            <button
-                                                onClick={() => removeChoiceVariable(choiceIndex, varIndex)}
-                                                className="p-2 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-                                            >
-                                                Remove
-                                            </button>
+                                {/* History Text Type */}
+                                <div className="flex gap-2">
+                                    <button
+                                        className={`flex-1 px-2 py-1 rounded text-sm ${
+                                            choice.historyIsDialogue
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                        }`}
+                                        onClick={() => updateChoice(choiceIndex, { historyIsDialogue: true })}
+                                    >
+                                        Dialogue History
+                                    </button>
+                                    <button
+                                        className={`flex-1 px-2 py-1 rounded text-sm ${
+                                            !choice.historyIsDialogue
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                        }`}
+                                        onClick={() => updateChoice(choiceIndex, { historyIsDialogue: false })}
+                                    >
+                                        Descriptive History
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Next Node */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300">Next Node</label>
+                                <NodeSelect
+                                    value={choice.next}
+                                    onChange={(value) => updateChoice(choiceIndex, { next: value })}
+                                    availableNodes={availableNodes}
+                                    placeholder="Select next node"
+                                />
+                            </div>
+
+                            {/* Variable Settings */}
+                            <EditorSection
+                                title="Set Variables"
+                                rightElement={
+                                    <button
+                                        onClick={() => addVariableToChoice(choiceIndex)}
+                                        className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                                    >
+                                        Add Variable
+                                    </button>
+                                }
+                            >
+                                <div className="space-y-4">
+                                    {choice.setVariables?.map((varSetting, varIndex) => (
+                                        <div key={varIndex} className="flex flex-col gap-2 p-2 border border-gray-700 rounded">
+                                            <div className="flex justify-between items-center">
+                                                <label className="text-sm font-medium text-gray-300">Variable {varIndex + 1}</label>
+                                                <button
+                                                    onClick={() => removeChoiceVariable(choiceIndex, varIndex)}
+                                                    className="p-2 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                            <ConditionEditor
+                                                condition={varSetting}
+                                                onChange={(updates) => updateChoiceVariable(choiceIndex, varIndex, updates)}
+                                            />
                                         </div>
-                                        <ConditionEditor
-                                            condition={varSetting}
-                                            onChange={(updates) => updateChoiceVariable(choiceIndex, varIndex, updates)}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        </CollapsiblePanel>
-                    </div>
+                                    ))}
+                                </div>
+                            </EditorSection>
+                        </div>
+                    </CollapsiblePanel>
                 ))}
             </div>
         </EditorSection>
