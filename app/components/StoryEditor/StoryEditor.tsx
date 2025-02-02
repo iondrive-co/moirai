@@ -488,15 +488,17 @@ export const StoryEditor = () => {
                 </div>
             </div>
 
-            <div className="w-64 p-4 border-l border-gray-700 bg-gray-800">
-                <NodeEditor
-                    selectedNode={selectedNode}
-                    storyData={storyData}
-                    currentScene={currentScene}
-                    onUpdateNodeId={updateNodeId}
-                    onUpdateNodeData={updateNodeData}
-                    onDeleteNode={handleNodesDelete}
-                />
+            <div className="w-96 border-l border-gray-700 bg-gray-800 flex flex-col">
+                <div className="p-4 overflow-y-auto flex-1">
+                    <NodeEditor
+                        selectedNode={selectedNode}
+                        storyData={storyData}
+                        currentScene={currentScene}
+                        onUpdateNodeId={updateNodeId}
+                        onUpdateNodeData={updateNodeData}
+                        onDeleteNode={handleNodesDelete}
+                    />
+                </div>
             </div>
         </div>
     );
