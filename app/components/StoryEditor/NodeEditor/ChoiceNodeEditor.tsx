@@ -7,6 +7,32 @@ import type {
     Choice,
     VariableSetting
 } from '~/types';
+import { ConditionEditor, NodeSelect } from './Common';
+import { CollapsiblePanel } from './CollapsiblePanel';
+
+interface EditorSectionProps {
+    title: string;
+    children: React.ReactNode;
+    rightElement?: React.ReactNode;
+    className?: string;
+}
+
+const EditorSection: React.FC<EditorSectionProps> = ({
+                                                         title,
+                                                         children,
+                                                         rightElement,
+                                                         className = ''
+                                                     }) => {
+    return (
+        <div className={`space-y-2 ${className}`}>
+            <div className="flex justify-between items-center">
+                <h4 className="text-sm font-medium text-gray-300">{title}</h4>
+                {rightElement}
+            </div>
+            {children}
+        </div>
+    );
+};
 
 interface ChoiceNodeEditorProps {
     node: StoryNode & { data: ChoiceNodeData };
@@ -24,6 +50,7 @@ export const ChoiceNodeEditor: React.FC<ChoiceNodeEditorProps> = ({
             text: 'New Choice',
             next: '',
             isDialogue: false,
+            historyText: '',
             historyIsDialogue: false,
             setVariables: []
         };
@@ -77,34 +104,18 @@ export const ChoiceNodeEditor: React.FC<ChoiceNodeEditorProps> = ({
         onUpdateNodeData(node.id, { choices: newChoices });
     };
 
-    const parseAndSetValue = (
-        choiceIndex: number,
-        varIndex: number,
-        rawValue: string
-    ) => {
-        let val: string | number | boolean = rawValue;
-        if (rawValue === 'true') {
-            val = true;
-        } else if (rawValue === 'false') {
-            val = false;
-        } else if (!isNaN(Number(rawValue)) && rawValue.trim() !== '') {
-            val = Number(rawValue);
-        }
-        updateChoiceVariable(choiceIndex, varIndex, { value: val });
-    };
-
     return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h4 className="text-sm font-medium text-gray-300">Choices</h4>
+        <EditorSection
+            title="Choices"
+            rightElement={
                 <button
                     onClick={addChoice}
                     className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
                 >
                     Add Choice
                 </button>
-            </div>
-
+            }
+        >
             <div className="space-y-4">
                 {node.data.choices.map((choice: Choice, choiceIndex: number) => (
                     <div
@@ -125,6 +136,7 @@ export const ChoiceNodeEditor: React.FC<ChoiceNodeEditorProps> = ({
 
                         {/* Choice Text */}
                         <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300">Choice Text</label>
                             <textarea
                                 className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
                                 value={choice.text}
@@ -134,109 +146,116 @@ export const ChoiceNodeEditor: React.FC<ChoiceNodeEditorProps> = ({
                             />
                         </div>
 
-                        {/* Dialogue or Descriptive */}
-                        <div className="flex gap-2">
-                            <button
-                                className={`flex-1 px-2 py-1 rounded text-sm ${
-                                    choice.isDialogue
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                }`}
-                                onClick={() => updateChoice(choiceIndex, { isDialogue: true })}
-                            >
-                                Dialogue
-                            </button>
-                            <button
-                                className={`flex-1 px-2 py-1 rounded text-sm ${
-                                    !choice.isDialogue
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                }`}
-                                onClick={() => updateChoice(choiceIndex, { isDialogue: false })}
-                            >
-                                Descriptive
-                            </button>
+                        {/* Choice Text Type */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300">Choice Type</label>
+                            <div className="flex gap-2">
+                                <button
+                                    className={`flex-1 px-2 py-1 rounded text-sm ${
+                                        choice.isDialogue
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                    }`}
+                                    onClick={() => updateChoice(choiceIndex, { isDialogue: true })}
+                                >
+                                    Dialogue
+                                </button>
+                                <button
+                                    className={`flex-1 px-2 py-1 rounded text-sm ${
+                                        !choice.isDialogue
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                    }`}
+                                    onClick={() => updateChoice(choiceIndex, { isDialogue: false })}
+                                >
+                                    Descriptive
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* History Text */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300">History Text</label>
+                            <textarea
+                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                                value={choice.historyText || ''}
+                                onChange={(e) => updateChoice(choiceIndex, { historyText: e.target.value })}
+                                rows={2}
+                                placeholder="Text to show in history (optional)"
+                            />
+
+                            {/* History Text Type */}
+                            <div className="flex gap-2">
+                                <button
+                                    className={`flex-1 px-2 py-1 rounded text-sm ${
+                                        choice.historyIsDialogue
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                    }`}
+                                    onClick={() => updateChoice(choiceIndex, { historyIsDialogue: true })}
+                                >
+                                    Dialogue History
+                                </button>
+                                <button
+                                    className={`flex-1 px-2 py-1 rounded text-sm ${
+                                        !choice.historyIsDialogue
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                    }`}
+                                    onClick={() => updateChoice(choiceIndex, { historyIsDialogue: false })}
+                                >
+                                    Descriptive History
+                                </button>
+                            </div>
                         </div>
 
                         {/* Next Node */}
-                        <div className="mt-2">
-                            <select
-                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300">Next Node</label>
+                            <NodeSelect
                                 value={choice.next}
-                                onChange={(e) => updateChoice(choiceIndex, { next: e.target.value })}
-                            >
-                                <option value="">Select next node</option>
-                                {availableNodes.map(([id, step]) => (
-                                    <option key={id} value={id}>
-                                        {id} ({step.type})
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={(value) => updateChoice(choiceIndex, { next: value })}
+                                availableNodes={availableNodes}
+                                placeholder="Select next node"
+                            />
                         </div>
 
                         {/* Variable Settings */}
-                        <div className="mt-4 space-y-2">
-                            <div className="flex justify-between items-center">
-                                <label className="text-sm font-medium text-gray-300">Set Variables</label>
+                        <CollapsiblePanel
+                            title="Set Variables"
+                            defaultOpen={false}
+                            rightElement={
                                 <button
                                     onClick={() => addVariableToChoice(choiceIndex)}
                                     className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
                                 >
                                     Add Variable
                                 </button>
+                            }
+                        >
+                            <div className="space-y-4">
+                                {choice.setVariables?.map((varSetting, varIndex) => (
+                                    <div key={varIndex} className="flex flex-col gap-2 p-2 border border-gray-700 rounded">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-sm font-medium text-gray-300">Variable {varIndex + 1}</label>
+                                            <button
+                                                onClick={() => removeChoiceVariable(choiceIndex, varIndex)}
+                                                className="p-2 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                        <ConditionEditor
+                                            condition={varSetting}
+                                            onChange={(updates) => updateChoiceVariable(choiceIndex, varIndex, updates)}
+                                        />
+                                    </div>
+                                ))}
                             </div>
-                            {choice.setVariables?.map((varSetting, varIndex) => (
-                                <div key={varIndex} className="flex flex-col gap-2 p-2 border border-gray-700 rounded">
-                                    <div className="flex gap-2 items-center">
-                                        <input
-                                            className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                            placeholder="Variable name"
-                                            value={varSetting.variableName}
-                                            onChange={(e) =>
-                                                updateChoiceVariable(choiceIndex, varIndex, {
-                                                    variableName: e.target.value
-                                                })
-                                            }
-                                        />
-                                        <button
-                                            onClick={() => removeChoiceVariable(choiceIndex, varIndex)}
-                                            className="p-2 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-
-                                    {/* Operator and Value Fields */}
-                                    <div className="flex gap-2 items-center">
-                                        <select
-                                            className="w-20 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                            value={varSetting.operator}
-                                            onChange={(e) =>
-                                                updateChoiceVariable(choiceIndex, varIndex, {
-                                                    operator: e.target.value as VariableSetting['operator']
-                                                })
-                                            }
-                                        >
-                                            <option value="==">=</option>
-                                            <option value="!=">≠</option>
-                                            <option value=">">&gt;</option>
-                                            <option value="<">&lt;</option>
-                                            <option value=">=">&gt;=</option>
-                                            <option value="<=">&lt;=</option>
-                                        </select>
-                                        <input
-                                            className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded text-sm"
-                                            placeholder="Value"
-                                            value={String(varSetting.value)}
-                                            onChange={(e) => parseAndSetValue(choiceIndex, varIndex, e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        </CollapsiblePanel>
                     </div>
                 ))}
             </div>
-        </div>
+        </EditorSection>
     );
 };
