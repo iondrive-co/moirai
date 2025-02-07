@@ -183,20 +183,22 @@ export default function Scene() {
     const { isDevelopment } = data;
     const navigate = useNavigate();
     const { evaluateCondition, setMultipleVariables } = useGameState();
-    if (!data?.scene?.startingStep || !data?.scene?.steps) {
-        throw new Error(`Invalid scene data: ${JSON.stringify(data)}`);
-    }
+
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [currentStepId, setCurrentStepId] = useState(data.scene.startingStep);
     const [awaitingClick, setAwaitingClick] = useState(true);
+    const [pendingChoice, setPendingChoice] = useState<{
+        text: string;
+        next: string;
+        isDialogue?: boolean;
+    } | null>(null);
 
     useEffect(() => {
         setHistory([]);
         setCurrentStepId(data.scene.startingStep);
         setAwaitingClick(true);
+        setPendingChoice(null);
     }, [data.scene.startingStep]);
-
-    const currentStep = data.scene.steps[currentStepId];
 
     const getNextStep = (currentStep: Step): string | undefined => {
         // Handle conditional branches for any step type that has them
@@ -216,8 +218,24 @@ export default function Scene() {
         return 'next' in currentStep ? currentStep.next : undefined;
     };
 
+    const currentStep = data.scene.steps[currentStepId];
+
     const handleProgress = () => {
-        if (!currentStep || isChoiceStep(currentStep) || isSceneTransitionStep(currentStep) || !awaitingClick) return;
+        if (!currentStep || !awaitingClick) return;
+
+        if (pendingChoice) {
+            // Add the choice to history and move to next node
+            setHistory(prev => [...prev, {
+                type: 'choice',
+                text: pendingChoice.text,
+                isPlayerResponse: true,
+                isDialogue: pendingChoice.isDialogue
+            }]);
+            setCurrentStepId(pendingChoice.next);
+            setPendingChoice(null);
+            setAwaitingClick(true);
+            return;
+        }
 
         if (isDialogueStep(currentStep)) {
             setHistory(prev => [...prev, {
@@ -249,21 +267,15 @@ export default function Scene() {
         isDialogue?: boolean;
         setVariables?: VariableSetting[];
     }) => {
-        // Set variables if they exist
         if (choice.setVariables?.length) {
-            console.debug('Setting variables:', choice.setVariables);
             setMultipleVariables(choice.setVariables);
         }
-
-        const historyItem: HistoryItem = {
-            type: 'choice',
-            text: choice.historyText || choice.text,
-            isPlayerResponse: true,
+        const historyText = choice.historyText || choice.text;
+        setPendingChoice({
+            text: historyText,
+            next: choice.next,
             isDialogue: choice.isDialogue
-        };
-
-        setHistory(prev => [...prev, historyItem]);
-        setCurrentStepId(choice.next);
+        });
         setAwaitingClick(true);
     };
 
@@ -341,7 +353,7 @@ export default function Scene() {
 
                     {/* Current Step */}
                     <div className="mt-4">
-                        {isDescriptionStep(currentStep) && awaitingClick && (
+                        {isDescriptionStep(currentStep) && awaitingClick && !pendingChoice && (
                             <button
                                 onClick={handleProgress}
                                 className="description-text w-full text-left"
@@ -355,7 +367,7 @@ export default function Scene() {
                             </button>
                         )}
 
-                        {isDialogueStep(currentStep) && awaitingClick && (
+                        {isDialogueStep(currentStep) && awaitingClick && !pendingChoice && (
                             <button
                                 onClick={handleProgress}
                                 className="dialogue-text w-full text-left"
@@ -370,7 +382,7 @@ export default function Scene() {
                             </button>
                         )}
 
-                        {isChoiceStep(currentStep) && (
+                        {isChoiceStep(currentStep) && !pendingChoice && (
                             <div className="space-y-2">
                                 {currentStep.choices.map((choice, index) => {
                                     const displayText = choice.isDialogue ?
@@ -380,16 +392,13 @@ export default function Scene() {
                                     return (
                                         <button
                                             key={index}
-                                            onClick={() => {
-                                                const historyText = choice.historyText || choice.text;
-                                                handleChoice({
-                                                    text: choice.text,
-                                                    next: choice.next,
-                                                    historyText: historyText,
-                                                    isDialogue: choice.historyIsDialogue ?? choice.isDialogue,
-                                                    setVariables: choice.setVariables
-                                                });
-                                            }}
+                                            onClick={() => handleChoice({
+                                                text: choice.text,
+                                                next: choice.next,
+                                                historyText: choice.historyText || choice.text,
+                                                isDialogue: choice.historyIsDialogue ?? choice.isDialogue,
+                                                setVariables: choice.setVariables
+                                            })}
                                             className="choice-text w-full text-left"
                                         >
                                             {`${index + 1}. `}{displayText}
@@ -397,6 +406,24 @@ export default function Scene() {
                                     );
                                 })}
                             </div>
+                        )}
+
+                        {pendingChoice && (
+                            <button
+                                onClick={handleProgress}
+                                className="player-text w-full text-left cursor-pointer"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        handleProgress();
+                                    }
+                                }}
+                            >
+                                {pendingChoice.isDialogue ? (
+                                    <>You: &ldquo;{pendingChoice.text}&rdquo;</>
+                                ) : (
+                                    pendingChoice.text
+                                )}
+                            </button>
                         )}
 
                         {isSceneTransitionStep(currentStep) && (
