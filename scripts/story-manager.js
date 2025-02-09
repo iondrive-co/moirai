@@ -153,7 +153,7 @@ async function loadExampleToKV() {
     writeFileSync(TEMP_FILE, JSON.stringify(kvData, null, 2));
 
     try {
-        const command = `wrangler kv:bulk put --binding=STORY_DATA --local ${TEMP_FILE}`;
+        const command = `wrangler kv:bulk put --binding=STORY_DATA --local "${TEMP_FILE}"`;
         console.log('Executing:', command);
         execSync(command, { stdio: 'inherit' });
         console.log('Successfully loaded example story to local KV');
