@@ -29,13 +29,6 @@ export interface ConditionalBranch {
     next: string;
 }
 
-export interface ConditionalText {
-    id: string;
-    name: string;
-    condition: Condition;
-    text: string;
-}
-
 export interface HistoryItem {
     type: 'dialogue' | 'description' | 'choice';
     speaker?: string;
@@ -67,6 +60,7 @@ export interface DialogueStep extends BaseStep {
     type: 'dialogue';
     speaker: string;
     next?: string;
+    text: string;
 }
 
 export interface DescriptionStep extends BaseStep {
@@ -88,11 +82,23 @@ export type SceneTransitionStep = {
     nextScene: string;
 }
 
-export type Step = DialogueStep | DescriptionStep | ChoiceStep | SceneTransitionStep;
+export interface ImageStep {
+    type: 'image';
+    image: SceneImage;
+    next?: string;
+}
+
+export type Step = DialogueStep | DescriptionStep | ChoiceStep | SceneTransitionStep | ImageStep;
 
 export interface NodePosition {
     x: number;
     y: number;
+}
+
+export interface SceneImage {
+    path: string;
+    alt?: string;
+    position: 'left' | 'right' | 'top' | 'bottom';
 }
 
 export interface Scene {
@@ -104,9 +110,9 @@ export interface Scene {
 export type StoryData = Record<string, Scene>;
 
 export interface BaseNodeData {
-    type: string;
-    text: string;
     stepId: string;
+    text?: string;
+    type: string;
 }
 
 export interface DialogueNodeData extends BaseNodeData {
@@ -133,4 +139,9 @@ export interface SceneTransitionNodeData extends BaseNodeData {
     nextScene: string;
 }
 
-export type StoryNodeData = DialogueNodeData | DescriptionNodeData | ChoiceNodeData | SceneTransitionNodeData;
+export interface ImageNodeData extends BaseNodeData {
+    image: SceneImage;
+    type: 'image';
+}
+
+export type StoryNodeData = DialogueNodeData | DescriptionNodeData | ChoiceNodeData | SceneTransitionNodeData | ImageNodeData;

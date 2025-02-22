@@ -29,4 +29,8 @@
   .transition-text {
     @apply text-blue-400 cursor-pointer hover:text-blue-300;
   }
+
+  .scene-image {
+    @apply shadow-lg border border-gray-700;
+  }
 }

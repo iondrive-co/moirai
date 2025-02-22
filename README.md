@@ -15,6 +15,12 @@ to:
 - Select next scene from a description
 - Conditionally display text in a description
 
+The editor also supports embedding images, which can be loaded from cloudflare's CDN, however the layout options are 
+more limited than [Ren'Py](https://www.renpy.org/) and audio is not yet supported.
+
+Other features I would like to add soon are (backwards compatible) saving and infocards. Key bindings may be added at a 
+later date.
+
 ## Getting started
 
 Before anything else, you will want to create a KV store. Copy the wrangler.toml.template to wrangler.toml and run the 

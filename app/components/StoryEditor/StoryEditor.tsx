@@ -1,7 +1,7 @@
 import { ReactFlow, Background, Controls, addEdge, useNodesState, useEdgesState, Connection, MarkerType } from 'reactflow';
 import { useState, useCallback, useEffect } from 'react';
 import 'reactflow/dist/style.css';
-import type { StoryData, StoryNodeData, ChoiceStep, StoryNode, StoryEdge } from '~/types';
+import type {StoryData, StoryNodeData, ChoiceStep, StoryNode, StoryEdge, ImageStep, Step} from '~/types';
 import { NodeEditor } from './NodeEditor';
 import { nodeTypes } from './NodeTypes';
 
@@ -212,25 +212,32 @@ export const StoryEditor = () => {
             const currentStep = newStoryData[currentScene].steps[nodeId];
             const currentNodePositions = newStoryData[currentScene].nodePositions || {};
 
-            newStoryData[currentScene].steps[nodeId] = {
-                ...currentStep,
-                ...newData
-            } as StoryNodeData;
+            if (currentStep.type === 'image') {
+                newStoryData[currentScene].steps[nodeId] = {
+                    ...currentStep,
+                    ...newData
+                } as ImageStep;
+            } else {
+                newStoryData[currentScene].steps[nodeId] = {
+                    ...currentStep,
+                    ...newData
+                } as Step;
+            }
 
             newStoryData[currentScene].nodePositions = currentNodePositions;
-
             return newStoryData;
         });
 
         setSelectedNode((prev) => {
             if (!prev || prev.id !== nodeId) return prev;
+            const updatedData = {
+                ...prev.data,
+                ...newData,
+                stepId: nodeId
+            };
             return {
                 ...prev,
-                data: {
-                    ...prev.data,
-                    ...newData,
-                    stepId: nodeId
-                }
+                data: updatedData
             } as StoryNode;
         });
 
@@ -286,7 +293,7 @@ export const StoryEditor = () => {
         updateNodesAndEdges();
     }, [currentScene, storyData, updateNodesAndEdges]);
 
-    const addNewNode = useCallback((type: 'dialogue' | 'description' | 'choice' | 'sceneTransition') => {
+    const addNewNode = useCallback((type: 'dialogue' | 'description' | 'choice' | 'sceneTransition' | 'image') => {
         const newId = `${type}_${Date.now()}`;
 
         setStoryData((prev) => {
@@ -317,6 +324,15 @@ export const StoryEditor = () => {
                     text: 'New transition',
                     nextScene: ''
                 };
+            } else if (type === 'image') {
+                scene.steps[newId] = {
+                    type: 'image',
+                    image: {
+                        path: '',
+                        position: 'right',
+                        alt: ''
+                    }
+                };
             } else {
                 scene.steps[newId] = {
                     type: 'description',
@@ -324,7 +340,7 @@ export const StoryEditor = () => {
                 };
             }
 
-            if (isFirstNode) {
+            if (isFirstNode && type !== 'image') {
                 scene.startingStep = newId;
             }
 
@@ -438,6 +454,12 @@ export const StoryEditor = () => {
                         Add Choice
                     </button>
                     <button
+                        onClick={() => addNewNode('image')}
+                        className="px-3 py-1 bg-pink-600 text-white rounded hover:bg-pink-700"
+                    >
+                        Add Image
+                    </button>
+                    <button
                         onClick={() => addNewNode('sceneTransition')}
                         className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700"
                     >
@@ -467,10 +489,14 @@ export const StoryEditor = () => {
                         nodeTypes={nodeTypes}
                         onNodeClick={(_, node: StoryNode) => {
                             const currentNodeData = storyData[currentScene].steps[node.id];
-                            setSelectedNode({
+                            const updatedNode = {
                                 ...node,
-                                data: {...currentNodeData, stepId: node.id}
-                            });
+                                data: {
+                                    ...currentNodeData,
+                                    stepId: node.id
+                                }
+                            };
+                            setSelectedNode(updatedNode);
                         }}
                         deleteKeyCode={['Delete', 'Backspace']}
                         fitView

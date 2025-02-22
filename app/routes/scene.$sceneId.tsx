@@ -1,4 +1,4 @@
-import {useLoaderData, useNavigate, useRouteError} from "@remix-run/react";
+import {useLoaderData, useNavigate} from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/cloudflare";
 import { useState, useEffect } from "react";
 import type {
@@ -8,7 +8,10 @@ import type {
     DescriptionStep,
     ChoiceStep,
     SceneTransitionStep,
-    HistoryItem, VariableSetting
+    ImageStep,
+    HistoryItem,
+    VariableSetting,
+    SceneImage
 } from "~/types";
 import { useGameState } from '~/components/GameState';
 
@@ -19,6 +22,27 @@ interface LoaderData {
     };
     isDevelopment: boolean;
 }
+
+function isImageStep(step: Step): step is ImageStep {
+    return step.type === 'image';
+}
+
+const renderImage = (image: SceneImage) => {
+    if (!image.path) return null;
+
+    return (
+        <img
+            src={image.path}
+            alt={image.alt || 'Story image'}
+            className="rounded-md max-w-full object-contain scene-image"
+            style={{ maxHeight: '400px' }}
+            onError={(e) => {
+                e.currentTarget.src = '/api/placeholder-image';
+                e.currentTarget.alt = 'Image not found';
+            }}
+        />
+    );
+};
 
 export const loader: LoaderFunction = async ({ params, context }) => {
     try {
@@ -87,75 +111,6 @@ export const loader: LoaderFunction = async ({ params, context }) => {
     }
 };
 
-interface ErrorResponse {
-    error: string;
-    details: string;
-}
-
-export function ErrorBoundary() {
-    const error = useRouteError();
-
-    const getErrorContent = async (error: unknown) => {
-        if (error instanceof Response) {
-            try {
-                const data = await error.json() as ErrorResponse;
-                return {
-                    title: data.error || 'Error',
-                    message: data.details || 'An unexpected error occurred',
-                    status: error.status
-                };
-            } catch {
-                return {
-                    title: 'Error',
-                    message: error.statusText || 'An unexpected error occurred',
-                    status: error.status
-                };
-            }
-        }
-
-        return {
-            title: 'Error',
-            message: error instanceof Error ? error.message : 'An unexpected error occurred',
-            status: 500
-        };
-    };
-
-    const [errorContent, setErrorContent] = useState<{
-        title: string;
-        message: string;
-        status: number;
-    }>({
-        title: 'Loading Error',
-        message: 'Processing error details...',
-        status: 500
-    });
-
-    useEffect(() => {
-        getErrorContent(error).then(setErrorContent);
-    }, [error]);
-
-    return (
-        <div className="min-h-screen p-6 bg-gray-900 text-white">
-            <div className="max-w-2xl mx-auto space-y-6">
-                <h1 className="text-2xl font-bold text-red-500">{errorContent.title}</h1>
-                <div className="space-y-4">
-                    <p>{errorContent.message}</p>
-                    {errorContent.status === 503 && (
-                        <div className="mt-4 p-4 bg-gray-800 rounded">
-                            <p>No story data is currently available. Locally you can:</p>
-                            <ol className="list-decimal ml-6 mt-2">
-                                <li>Load the example story using npm run story:load-example:prod</li>
-                                <li>Create a new story using the editor locally</li>
-                                <li>Upload your story using npm run story:put:prod</li>
-                            </ol>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
-
 function isDialogueStep(step: Step): step is DialogueStep {
     return step.type === 'dialogue';
 }
@@ -183,6 +138,17 @@ export default function Scene() {
     const { isDevelopment } = data;
     const navigate = useNavigate();
     const { evaluateCondition, setMultipleVariables } = useGameState();
+
+    // Find all image nodes in the current scene
+    const imageNodes = Object.values(data.scene.steps).filter(step =>
+        step.type === 'image'
+    ) as ImageStep[];
+
+    // Select a random image node if available (or use the first one)
+    // TODO: Implement a better selection method in the future
+    const selectedImageNode = imageNodes.length > 0
+        ? imageNodes[Math.floor(Math.random() * imageNodes.length)]
+        : null;
 
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [currentStepId, setCurrentStepId] = useState(data.scene.startingStep);
@@ -256,6 +222,13 @@ export default function Scene() {
             if (nextStepId) {
                 setCurrentStepId(nextStepId);
             }
+        } else if (isImageStep(currentStep)) {
+            // Skip image nodes in the regular flow since we're displaying a random image at the scene level
+            // Just proceed to the next node if available
+            const nextStepId = getNextStep(currentStep);
+            if (nextStepId) {
+                setCurrentStepId(nextStepId);
+            }
         }
         setAwaitingClick(true);
     };
@@ -313,6 +286,120 @@ export default function Scene() {
 
     if (!currentStep) return null;
 
+    const renderContent = () => (
+        <div className="space-y-4">
+            {/* History */}
+            <div className="space-y-4">
+                {history.map((item, index) => (
+                    <div key={index}>
+                        {item.type === 'description' ? (
+                            <p className="description-text">{item.text}</p>
+                        ) : item.isPlayerResponse ? (
+                            <p className="player-text">
+                                {item.isDialogue ? (
+                                    <>You: &ldquo;{item.text}&rdquo;</>
+                                ) : (
+                                    item.text
+                                )}
+                            </p>
+                        ) : (
+                            <p className="dialogue-text">
+                                {item.speaker && <span className="font-semibold">{item.speaker}: </span>}
+                                &ldquo;{item.text}&rdquo;
+                            </p>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            {/* Current Step */}
+            <div className="mt-4">
+                {isDescriptionStep(currentStep) && awaitingClick && !pendingChoice && (
+                    <button
+                        onClick={handleProgress}
+                        className="description-text w-full text-left"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                handleProgress();
+                            }
+                        }}
+                    >
+                        {renderDescriptionText(currentStep)}
+                    </button>
+                )}
+                {isDialogueStep(currentStep) && awaitingClick && !pendingChoice && (
+                    <button
+                        onClick={handleProgress}
+                        className="dialogue-text w-full text-left"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                handleProgress();
+                            }
+                        }}
+                    >
+                        <span className="font-semibold">{currentStep.speaker}: </span>
+                        {addQuotes(currentStep.text)}
+                    </button>
+                )}
+                {isChoiceStep(currentStep) && !pendingChoice && (
+                    <div className="space-y-2">
+                        {currentStep.choices.map((choice, index) => {
+                            const displayText = choice.isDialogue ?
+                                <>&ldquo;{choice.text}&rdquo;</> :
+                                choice.text;
+
+                            return (
+                                <button
+                                    key={index}
+                                    onClick={() => handleChoice({
+                                        text: choice.text,
+                                        next: choice.next,
+                                        historyText: choice.historyText || choice.text,
+                                        isDialogue: choice.historyIsDialogue ?? choice.isDialogue,
+                                        setVariables: choice.setVariables
+                                    })}
+                                    className="choice-text w-full text-left"
+                                >
+                                    {`${index + 1}. `}{displayText}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+                {pendingChoice && (
+                    <button
+                        onClick={handleProgress}
+                        className="player-text w-full text-left cursor-pointer"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                handleProgress();
+                            }
+                        }}
+                    >
+                        {pendingChoice.isDialogue ? (
+                            <>You: &ldquo;{pendingChoice.text}&rdquo;</>
+                        ) : (
+                            pendingChoice.text
+                        )}
+                    </button>
+                )}
+                {isSceneTransitionStep(currentStep) && (
+                    <button
+                        onClick={() => handleSceneTransition(currentStep)}
+                        className="transition-text w-full text-left"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                handleSceneTransition(currentStep);
+                            }
+                        }}
+                    >
+                        {currentStep.text}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+
     return (
         <div className="min-h-screen p-6">
             <div className="max-w-2xl mx-auto space-y-6">
@@ -326,121 +413,44 @@ export default function Scene() {
                         </button>
                     </div>
                 )}
-                <div className="p-6">
-                    {/* History */}
-                    <div className="space-y-4">
-                        {history.map((item, index) => (
-                            <div key={index}>
-                                {item.type === 'description' ? (
-                                    <p className="description-text">{item.text}</p>
-                                ) : item.isPlayerResponse ? (
-                                    <p className="player-text">
-                                        {item.isDialogue ? (
-                                            <>You: &ldquo;{item.text}&rdquo;</>
-                                        ) : (
-                                            item.text
-                                        )}
-                                    </p>
-                                ) : (
-                                    <p className="dialogue-text">
-                                        {item.speaker && <span className="font-semibold">{item.speaker}: </span>}
-                                        &ldquo;{item.text}&rdquo;
-                                    </p>
-                                )}
-                            </div>
-                        ))}
+
+                {/* Top position - display before content */}
+                {selectedImageNode?.image?.path && selectedImageNode.image.position === 'top' && (
+                    <div className="mb-6 flex justify-center">
+                        {renderImage(selectedImageNode.image)}
                     </div>
+                )}
 
-                    {/* Current Step */}
-                    <div className="mt-4">
-                        {isDescriptionStep(currentStep) && awaitingClick && !pendingChoice && (
-                            <button
-                                onClick={handleProgress}
-                                className="description-text w-full text-left"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        handleProgress();
-                                    }
-                                }}
-                            >
-                                {renderDescriptionText(currentStep)}
-                            </button>
-                        )}
+                {/* Left/Right position - wrap content and image in a flex container */}
+                {selectedImageNode?.image?.path &&
+                (selectedImageNode.image.position === 'left' || selectedImageNode.image.position === 'right') ? (
+                    // Flex container for image + content
+                    <div className={`flex items-start gap-6 ${
+                        selectedImageNode.image.position === 'right' ? 'flex-row-reverse' : 'flex-row'
+                    }`}>
+                        {/* Image column */}
+                        <div className="w-1/3 flex-shrink-0">
+                            {renderImage(selectedImageNode.image)}
+                        </div>
 
-                        {isDialogueStep(currentStep) && awaitingClick && !pendingChoice && (
-                            <button
-                                onClick={handleProgress}
-                                className="dialogue-text w-full text-left"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        handleProgress();
-                                    }
-                                }}
-                            >
-                                <span className="font-semibold">{currentStep.speaker}: </span>
-                                {addQuotes(currentStep.text)}
-                            </button>
-                        )}
-
-                        {isChoiceStep(currentStep) && !pendingChoice && (
-                            <div className="space-y-2">
-                                {currentStep.choices.map((choice, index) => {
-                                    const displayText = choice.isDialogue ?
-                                        <>&ldquo;{choice.text}&rdquo;</> :
-                                        choice.text;
-
-                                    return (
-                                        <button
-                                            key={index}
-                                            onClick={() => handleChoice({
-                                                text: choice.text,
-                                                next: choice.next,
-                                                historyText: choice.historyText || choice.text,
-                                                isDialogue: choice.historyIsDialogue ?? choice.isDialogue,
-                                                setVariables: choice.setVariables
-                                            })}
-                                            className="choice-text w-full text-left"
-                                        >
-                                            {`${index + 1}. `}{displayText}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {pendingChoice && (
-                            <button
-                                onClick={handleProgress}
-                                className="player-text w-full text-left cursor-pointer"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        handleProgress();
-                                    }
-                                }}
-                            >
-                                {pendingChoice.isDialogue ? (
-                                    <>You: &ldquo;{pendingChoice.text}&rdquo;</>
-                                ) : (
-                                    pendingChoice.text
-                                )}
-                            </button>
-                        )}
-
-                        {isSceneTransitionStep(currentStep) && (
-                            <button
-                                onClick={() => handleSceneTransition(currentStep)}
-                                className="transition-text w-full text-left"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        handleSceneTransition(currentStep);
-                                    }
-                                }}
-                            >
-                                {currentStep.text}
-                            </button>
-                        )}
+                        {/* Content column */}
+                        <div className="w-2/3 p-6">
+                            {renderContent()}
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    // Normal content without left/right image
+                    <div className="p-6">
+                        {renderContent()}
+                    </div>
+                )}
+
+                {/* Bottom position - display after content */}
+                {selectedImageNode?.image?.path && selectedImageNode.image.position === 'bottom' && (
+                    <div className="mt-6 flex justify-center">
+                        {renderImage(selectedImageNode.image)}
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -3,15 +3,17 @@ import type {
     ChoiceNodeData,
     DescriptionNodeData,
     DialogueNodeData,
+    ImageNodeData,
     SceneTransitionNodeData,
     StoryData,
     StoryNode,
     StoryNodeData
 } from '~/types';
-import {DialogueNodeEditor} from "~/components/StoryEditor/NodeEditor/DialogueNodeEditor";
 import {ChoiceNodeEditor} from "~/components/StoryEditor/NodeEditor/ChoiceNodeEditor";
 import {DescriptionNodeEditor} from "~/components/StoryEditor/NodeEditor/DescriptionNodeEditor";
-import { SceneTransitionNodeEditor } from '~/components/StoryEditor/NodeEditor/SceneTransitionNodeEditor';
+import {DialogueNodeEditor} from "~/components/StoryEditor/NodeEditor/DialogueNodeEditor";
+import {ImageNodeEditor} from '~/components/StoryEditor/NodeEditor/ImageNodeEditor';
+import {SceneTransitionNodeEditor} from '~/components/StoryEditor/NodeEditor/SceneTransitionNodeEditor';
 
 interface NodeEditorProps {
     selectedNode: StoryNode | null;
@@ -22,14 +24,17 @@ interface NodeEditorProps {
     onDeleteNode: (nodes: StoryNode[]) => void;
 }
 
+const isChoiceNode = (node: StoryNode): node is StoryNode & { data: ChoiceNodeData } =>
+    node.data.type === 'choice';
+
 const isDialogueNode = (node: StoryNode): node is StoryNode & { data: DialogueNodeData } =>
     node.data.type === 'dialogue';
 
 const isDescriptionNode = (node: StoryNode): node is StoryNode & { data: DescriptionNodeData } =>
     node.data.type === 'description';
 
-const isChoiceNode = (node: StoryNode): node is StoryNode & { data: ChoiceNodeData } =>
-    node.data.type === 'choice';
+const isImageNode = (node: StoryNode): node is StoryNode & { data: ImageNodeData } =>
+    node.data.type === 'image';
 
 const isSceneTransitionNode = (node: StoryNode): node is StoryNode & { data: SceneTransitionNodeData } =>
     node.data.type === 'sceneTransition';
@@ -75,8 +80,9 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
                 />
             </div>
 
-            {isDialogueNode(selectedNode) && (
-                <DialogueNodeEditor
+
+            {isChoiceNode(selectedNode) && (
+                <ChoiceNodeEditor
                     node={selectedNode}
                     onUpdateNodeData={onUpdateNodeData}
                     availableNodes={Object.entries(storyData[currentScene].steps)
@@ -93,8 +99,17 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
                 />
             )}
 
-            {isChoiceNode(selectedNode) && (
-                <ChoiceNodeEditor
+            {isDialogueNode(selectedNode) && (
+                <DialogueNodeEditor
+                    node={selectedNode}
+                    onUpdateNodeData={onUpdateNodeData}
+                    availableNodes={Object.entries(storyData[currentScene].steps)
+                        .filter(([id]) => id !== selectedNode.id)}
+                />
+            )}
+
+            {isImageNode(selectedNode) && (
+                <ImageNodeEditor
                     node={selectedNode}
                     onUpdateNodeData={onUpdateNodeData}
                     availableNodes={Object.entries(storyData[currentScene].steps)
