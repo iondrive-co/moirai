@@ -5,6 +5,7 @@ import type { PlatformProxy } from "wrangler";
 interface Env {
     STORY_DATA: KVNamespace;
     ENV: string;
+    LOCAL_STORAGE: KVNamespace;
 }
 
 const build = {
@@ -18,7 +19,8 @@ export const onRequest = createPagesFunctionHandler({
             cloudflare: context as unknown as Omit<PlatformProxy<Env>, "dispose">,
             env: {
                 STORY_DATA: context.env.STORY_DATA,
-                ENV: context.env.ENV
+                ENV: context.env.ENV,
+                LOCAL_STORAGE: context.env.LOCAL_STORAGE || context.env.STORY_DATA
             }
         };
     }

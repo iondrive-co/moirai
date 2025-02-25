@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import type { StoryNode, StoryNodeData, ImageNodeData, Step, SceneImage } from '~/types';
 import { CollapsiblePanel } from './CollapsiblePanel';
 
@@ -13,29 +13,59 @@ export const ImageNodeEditor: React.FC<ImageNodeEditorProps> = ({
                                                                     onUpdateNodeData,
                                                                 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [previewKey, setPreviewKey] = useState(0);
+    const [previewUrl, setPreviewUrl] = useState(node.data.image.path || '');
 
-    // Fix the handleImageChange function to avoid using 'any'
+    useEffect(() => {
+        setPreviewUrl(node.data.image.path || '');
+    }, [node.data.image.path]);
+
     const handleImageChange = <K extends keyof SceneImage>(key: K, value: SceneImage[K]) => {
         const updatedImage = { ...node.data.image, [key]: value };
         onUpdateNodeData(node.id, { image: updatedImage });
+
+        if (key === 'path') {
+            setPreviewUrl(value as string);
+            setPreviewKey(prev => prev + 1);
+        }
     };
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    interface UploadResponse {
+        imagePath?: string;
+        error?: string;
+    }
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
-        const placeholderPath = '/api/placeholder-image';
-        handleImageChange('path', placeholderPath);
-        console.log('Selected file:', file.name);
-        console.log('Using placeholder path:', placeholderPath);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-        onUpdateNodeData(node.id, {
-            image: {
-                ...node.data.image,
-                path: placeholderPath
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json() as UploadResponse;
+            if (result.error) {
+                throw new Error(result.error);
             }
-        });
+
+            if (result.imagePath) {
+                handleImageChange('path', result.imagePath);
+                setPreviewUrl(result.imagePath);
+                setPreviewKey(prev => prev + 1);
+            }
+
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        } catch (error) {
+            console.error('Upload failed:', error);
+            alert('Failed to upload image');
+        }
     };
 
     return (
@@ -116,11 +146,12 @@ export const ImageNodeEditor: React.FC<ImageNodeEditorProps> = ({
                         </select>
                     </div>
 
-                    {node.data.image.path && (
+                    {previewUrl && (
                         <div className="mt-4 p-4 bg-gray-900 rounded border border-gray-600">
                             <p className="text-sm text-gray-300 mb-2">Image Preview:</p>
                             <img
-                                src={node.data.image.path}
+                                key={previewKey}
+                                src={previewUrl}
                                 alt={node.data.image.alt || 'Preview'}
                                 className="max-h-48 mx-auto object-contain"
                                 onError={(e) => {

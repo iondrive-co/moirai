@@ -131,6 +131,20 @@ export const StoryEditor = () => {
     }, [currentScene]);
 
     const handleNodesDelete = useCallback((nodesToDelete: StoryNode[]) => {
+        // First, collect any image paths that need to be deleted
+        const imagePathsToDelete: string[] = [];
+
+        nodesToDelete.forEach((node) => {
+            if (node.data.type === 'image' && node.data.image?.path) {
+                // Extract filename from path
+                const filename = node.data.image.path.split('/').pop();
+                if (filename) {
+                    imagePathsToDelete.push(filename);
+                }
+            }
+        });
+
+        // Delete the actual nodes from the story data
         setStoryData((prev) => {
             const newData = { ...prev };
             const scene = newData[currentScene];
@@ -159,6 +173,18 @@ export const StoryEditor = () => {
 
             return newData;
         });
+
+        // Delete the image files from KV storage
+        if (imagePathsToDelete.length > 0) {
+            // Fire and forget - we don't need to wait for this
+            fetch('/api/delete-images', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filenames: imagePathsToDelete })
+            }).catch(err => console.error('Failed to delete image files:', err));
+        }
 
         if (selectedNode && nodesToDelete.some(node => node.id === selectedNode.id)) {
             setSelectedNode(null);

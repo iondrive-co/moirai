@@ -159,9 +159,38 @@
             "type": "sceneTransition",
             "text": "Leave the tavern",
             "nextScene": "outside_tavern"
+          },
+          "tavern_image": {
+            "type": "image",
+            "image": {
+              "path": "/api/uploads/08e1ad39d8034053d483405c43610aa1.webp",
+              "position": "left",
+              "alt": ""
+            }
           }
         },
-        "nodePositions": {}
+        "nodePositions": {
+          "image_1740490709470": {
+            "x": 850,
+            "y": 950
+          },
+          "tavern": {
+            "x": 797.7019527235356,
+            "y": 925.5942446043166
+          },
+          "image_1740491566893": {
+            "x": 850,
+            "y": 950
+          },
+          "tavern_image": {
+            "x": 850,
+            "y": 950
+          },
+          "image_1740491623557": {
+            "x": 850,
+            "y": 950
+          }
+        }
       },
       "outside_tavern": {
         "startingStep": "outside_description",
