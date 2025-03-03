@@ -19,6 +19,8 @@ if (!['get-prod', 'put-prod', 'load-example', 'backup', 'load', 'list'].includes
 
 const TEMP_FILE = join(__dirname, 'temp-story.txt');
 const STORIES_DIR = join(__dirname, '..', 'stories');
+const EXAMPLE_DIR = join(__dirname, '..', 'example');
+const EXAMPLE_IMAGES_DIR = join(EXAMPLE_DIR, 'images');
 
 // Create stories directory if it doesn't exist
 if (!existsSync(STORIES_DIR)) {
@@ -141,10 +143,45 @@ async function loadCurrentStory() {
     }
 }
 
+// Find all image paths in story data
+function extractImagePaths(storyData) {
+    const imagePaths = new Set();
+
+    // Process each scene in the story
+    Object.values(storyData).forEach(scene => {
+        if (!scene.steps) return;
+
+        // Check each step for image nodes
+        Object.values(scene.steps).forEach(step => {
+            if (step.type === 'image' && step.image && step.image.path) {
+                // Extract filename from path like "/api/uploads/filename.ext"
+                const filename = step.image.path.split('/').pop();
+                if (filename) {
+                    imagePaths.add(filename);
+                }
+            }
+        });
+    });
+
+    return Array.from(imagePaths);
+}
+
 async function loadExampleToKV() {
-    const sourceFile = join(__dirname, '..', 'example', 'example-story.json');
+    const sourceFile = join(EXAMPLE_DIR, 'example-story.json');
     console.log('Loading example story from:', sourceFile);
     const sourceData = JSON.parse(readFileSync(sourceFile, 'utf8'));
+
+    // Get the story data object
+    const storyData = sourceData.find(item => item.key === 'current-story')?.value;
+    if (!storyData) {
+        console.error('No story data found in example file');
+        return;
+    }
+
+    // Find all image paths in the story
+    const imageFilenames = extractImagePaths(storyData);
+
+    // Prepare KV data
     const kvData = sourceData.map(item => ({
         ...item,
         value: JSON.stringify(item.value)
@@ -153,10 +190,41 @@ async function loadExampleToKV() {
     writeFileSync(TEMP_FILE, JSON.stringify(kvData, null, 2));
 
     try {
+        // First load the story data
         const command = `wrangler kv:bulk put --binding=STORY_DATA --local "${TEMP_FILE}"`;
         console.log('Executing:', command);
         execSync(command, { stdio: 'inherit' });
         console.log('Successfully loaded example story to local KV');
+
+        // Now load example images if they exist
+        if (imageFilenames.length > 0 && existsSync(EXAMPLE_IMAGES_DIR)) {
+            console.log(`Loading ${imageFilenames.length} example images...`);
+
+            for (const filename of imageFilenames) {
+                const imagePath = join(EXAMPLE_IMAGES_DIR, filename);
+
+                if (existsSync(imagePath)) {
+                    console.log(`Loading image: ${filename}`);
+                    const kvKey = `public/uploads/${filename}`;
+
+                    try {
+                        // Upload image directly to KV store
+                        execSync(`wrangler kv:key put --binding=STORY_DATA --local "${kvKey}" --path="${imagePath}"`, {
+                            stdio: 'inherit'
+                        });
+                        console.log(`Successfully loaded image: ${filename}`);
+                    } catch (imgError) {
+                        console.error(`Error loading image ${filename}:`, imgError);
+                    }
+                } else {
+                    console.warn(`Example image not found: ${imagePath}`);
+                }
+            }
+
+            console.log('Finished loading example images');
+        } else {
+            console.log('No example images to load');
+        }
     } catch (error) {
         console.error('Error loading example data:', error);
     }
