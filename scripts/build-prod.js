@@ -21,14 +21,25 @@ try {
     // Clear routes directory except for production routes
     console.log('Filtering production routes...');
     const files = fs.readdirSync(routesDir);
+
+    // Keep only these core routes for production
+    const productionFiles = [
+        'root.tsx',
+        '_index.tsx',
+        'scene.$sceneId.tsx',
+        // Needed for viewing images
+        'api.uploads.$filename.tsx'
+    ];
+
     files.forEach(file => {
-        const productionFiles = ['root.tsx', '_index.tsx', 'scene.$sceneId.tsx'];
         if (!productionFiles.includes(file)) {
             const filePath = path.join(routesDir, file);
             if (fs.statSync(filePath).isFile()) {
                 console.log(`Removing non-production file: ${file}`);
                 fs.rmSync(filePath);
             }
+        } else {
+            console.log(`Keeping production file: ${file}`);
         }
     });
 

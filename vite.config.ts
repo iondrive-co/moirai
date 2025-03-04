@@ -25,11 +25,17 @@ export default defineConfig({
           route("/", "routes/_index.tsx");
           route("/scene/*", "routes/scene.$sceneId.tsx");
 
+          // Include the route necessary for viewing images
+          route("/api/uploads/:filename", "routes/api.uploads.$filename.tsx");
+
           // Only include editor routes in development
           if (!isProduction) {
             route("/edit", "routes/edit.tsx");
             route("/edit/*", "routes/edit/*.tsx");
             route("/api/story-data", "routes/api.story-data.tsx");
+            route("/api/upload", "routes/api.upload.tsx");
+            route("/api/delete-images", "routes/api.delete-images.tsx");
+            route("/api/placeholder-image", "routes/api.placeholder-image.tsx");
           }
         });
       },

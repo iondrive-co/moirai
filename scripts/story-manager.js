@@ -247,14 +247,57 @@ async function getProdData() {
 
 async function putProdData() {
     try {
-        console.log('Getting local data...');
+        console.log('Getting local story data...');
         const localData = execSync('wrangler kv:key get --binding=STORY_DATA --local current-story').toString();
+        const parsedData = JSON.parse(localData);
+        // Get image filenames referenced in the story
+        const imageFilenames = extractImagePaths(parsedData);
+        // Upload story data to production
         writeFileSync(TEMP_FILE, localData);
-        console.log('Writing to production KV...');
+        console.log('Writing story data to production KV...');
         execSync(`wrangler kv:key put --binding=STORY_DATA current-story --path=${TEMP_FILE}`, {
             stdio: 'inherit'
         });
-        console.log('Successfully copied local data to production KV');
+        console.log('Successfully copied story data to production KV');
+        // Now upload any referenced images
+        if (imageFilenames.length > 0) {
+            console.log(`Found ${imageFilenames.length} images referenced in the story. Uploading to production...`);
+            for (const filename of imageFilenames) {
+                const kvKey = `public/uploads/${filename}`;
+                const tempImageFile = join(__dirname, 'temp-image-file');
+                try {
+                    // Get image data from local KV
+                    console.log(`Syncing image: ${filename}`);
+                    // Try to get the image from local KV and save to a temp file
+                    try {
+                        execSync(`wrangler kv:key get --binding=STORY_DATA --local "${kvKey}" > "${tempImageFile}"`, {
+                            stdio: 'inherit'
+                        });
+                    } catch (getError) {
+                        console.error(`Warning: Image ${filename} not found in local KV. Skipping...`);
+                        continue;
+                    }
+                    // Upload the image to production KV
+                    execSync(`wrangler kv:key put --binding=STORY_DATA "${kvKey}" --path="${tempImageFile}"`, {
+                        stdio: 'inherit'
+                    });
+                    console.log(`Successfully synced image: ${filename}`);
+                    // Clean up temp file
+                    if (existsSync(tempImageFile)) {
+                        unlinkSync(tempImageFile);
+                    }
+                } catch (imgError) {
+                    console.error(`Error syncing image ${filename}:`, imgError);
+                    // Clean up temp file in case of error
+                    if (existsSync(tempImageFile)) {
+                        unlinkSync(tempImageFile);
+                    }
+                }
+            }
+            console.log('Finished syncing images to production');
+        } else {
+            console.log('No images found in story data');
+        }
     } catch (error) {
         console.error('Error syncing to production:', error.message);
     }
