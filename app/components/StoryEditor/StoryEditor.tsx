@@ -356,7 +356,9 @@ export const StoryEditor = () => {
                     image: {
                         path: '',
                         position: 'right',
-                        alt: ''
+                        alt: '',
+                        horizontalStretch: 100,
+                        verticalStretch: 100
                     }
                 };
             } else {

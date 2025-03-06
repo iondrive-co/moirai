@@ -30,12 +30,53 @@ function isImageStep(step: Step): step is ImageStep {
 const renderImage = (image: SceneImage) => {
     if (!image.path) return null;
 
+    // Default stretch values if not specified
+    const horizontalStretch = image.horizontalStretch || 100;
+    const verticalStretch = image.verticalStretch || 100;
+
+    // Only use original aspect ratio if no stretch is applied
+    const isStretched = horizontalStretch !== 100 || verticalStretch !== 100;
+
+    // For stretched images, we use a container approach
+    if (isStretched) {
+        // Calculate relative dimensions
+        const containerWidth = image.position === 'left' || image.position === 'right'
+            ? '100%' // Full width of the column in left/right layouts
+            : `${horizontalStretch}%`; // Percentage of parent in top/bottom layouts
+
+        return (
+            <div className="relative" style={{
+                width: containerWidth,
+                maxWidth: '100%',
+                aspectRatio: horizontalStretch / verticalStretch
+            }}>
+                <img
+                    src={image.path}
+                    alt={image.alt || 'Story image'}
+                    className="rounded-md scene-image"
+                    style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'fill'
+                    }}
+                    onError={(e) => {
+                        e.currentTarget.src = '/api/placeholder-image';
+                        e.currentTarget.alt = 'Image not found';
+                    }}
+                />
+            </div>
+        );
+    }
     return (
         <img
             src={image.path}
             alt={image.alt || 'Story image'}
-            className="rounded-md max-w-full object-contain scene-image"
-            style={{ maxHeight: '400px' }}
+            className="rounded-md scene-image object-contain"
+            style={{
+                maxWidth: '100%',
+                maxHeight: '400px'
+            }}
             onError={(e) => {
                 e.currentTarget.src = '/api/placeholder-image';
                 e.currentTarget.alt = 'Image not found';
@@ -416,7 +457,10 @@ export default function Scene() {
 
                 {/* Top position - display before content */}
                 {selectedImageNode?.image?.path && selectedImageNode.image.position === 'top' && (
-                    <div className="mb-6 flex justify-center">
+                    <div className="mb-6 flex justify-center" style={{
+                        maxWidth: `${selectedImageNode.image.horizontalStretch || 100}%`,
+                        margin: '0 auto'
+                    }}>
                         {renderImage(selectedImageNode.image)}
                     </div>
                 )}
@@ -428,13 +472,17 @@ export default function Scene() {
                     <div className={`flex items-start gap-6 ${
                         selectedImageNode.image.position === 'right' ? 'flex-row-reverse' : 'flex-row'
                     }`}>
-                        {/* Image column */}
-                        <div className="w-1/3 flex-shrink-0">
+                        {/* Image column - width is determined by horizontal stretch */}
+                        <div className="flex-shrink-0" style={{
+                            width: `${(selectedImageNode.image.horizontalStretch || 100) / 3}%`,
+                            minWidth: '100px',
+                            maxWidth: '50%'
+                        }}>
                             {renderImage(selectedImageNode.image)}
                         </div>
 
-                        {/* Content column */}
-                        <div className="w-2/3 p-6">
+                        {/* Content column - takes remaining space */}
+                        <div className="flex-1 p-6">
                             {renderContent()}
                         </div>
                     </div>
@@ -447,7 +495,10 @@ export default function Scene() {
 
                 {/* Bottom position - display after content */}
                 {selectedImageNode?.image?.path && selectedImageNode.image.position === 'bottom' && (
-                    <div className="mt-6 flex justify-center">
+                    <div className="mt-6 flex justify-center" style={{
+                        maxWidth: `${selectedImageNode.image.horizontalStretch || 100}%`,
+                        margin: '0 auto'
+                    }}>
                         {renderImage(selectedImageNode.image)}
                     </div>
                 )}

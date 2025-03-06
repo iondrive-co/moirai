@@ -99,6 +99,8 @@ export interface SceneImage {
     path: string;
     alt?: string;
     position: 'left' | 'right' | 'top' | 'bottom';
+    horizontalStretch?: number; // Percentage value, defaults to 100%
+    verticalStretch?: number;   // Percentage value, defaults to 100%
 }
 
 export interface Scene {

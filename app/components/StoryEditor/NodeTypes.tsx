@@ -171,6 +171,11 @@ export const ImageNode: React.FC<NodeProps<ImageNodeData>> = ({ data }) => {
                 )}
                 <p className="text-xs text-gray-400">Path: {data.image.path || 'Not set'}</p>
                 <p className="text-xs text-gray-400">Position: {data.image.position}</p>
+                {(data.image.horizontalStretch !== 100 || data.image.verticalStretch !== 100) && (
+                    <p className="text-xs text-gray-400">
+                        Stretch: {data.image.horizontalStretch || 100}% × {data.image.verticalStretch || 100}%
+                    </p>
+                )}
             </div>
 
             <Handle
