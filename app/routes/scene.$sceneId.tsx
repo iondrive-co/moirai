@@ -30,58 +30,33 @@ function isImageStep(step: Step): step is ImageStep {
 const renderImage = (image: SceneImage) => {
     if (!image.path) return null;
 
-    // Default stretch values if not specified
-    const horizontalStretch = image.horizontalStretch || 100;
-    const verticalStretch = image.verticalStretch || 100;
+    // For top/bottom position we handle horizontal alignment
+    const isTopOrBottom = image.position === 'top' || image.position === 'bottom';
+    const alignment = image.alignment || 'center';
 
-    // Only use original aspect ratio if no stretch is applied
-    const isStretched = horizontalStretch !== 100 || verticalStretch !== 100;
+    // Only use horizontal alignment for top/bottom positioned images
+    const horizontalAlignment = isTopOrBottom ? (
+        alignment === 'start' ? 'justify-start' :
+            alignment === 'end' ? 'justify-end' :
+                'justify-center'
+    ) : 'justify-center'; // Always center horizontally for left/right
 
-    // For stretched images, we use a container approach
-    if (isStretched) {
-        // Calculate relative dimensions
-        const containerWidth = image.position === 'left' || image.position === 'right'
-            ? '100%' // Full width of the column in left/right layouts
-            : `${horizontalStretch}%`; // Percentage of parent in top/bottom layouts
-
-        return (
-            <div className="relative" style={{
-                width: containerWidth,
-                maxWidth: '100%',
-                aspectRatio: horizontalStretch / verticalStretch
-            }}>
-                <img
-                    src={image.path}
-                    alt={image.alt || 'Story image'}
-                    className="rounded-md scene-image"
-                    style={{
-                        position: 'absolute',
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'fill'
-                    }}
-                    onError={(e) => {
-                        e.currentTarget.src = '/api/placeholder-image';
-                        e.currentTarget.alt = 'Image not found';
-                    }}
-                />
-            </div>
-        );
-    }
     return (
-        <img
-            src={image.path}
-            alt={image.alt || 'Story image'}
-            className="rounded-md scene-image object-contain"
-            style={{
-                maxWidth: '100%',
-                maxHeight: '400px'
-            }}
-            onError={(e) => {
-                e.currentTarget.src = '/api/placeholder-image';
-                e.currentTarget.alt = 'Image not found';
-            }}
-        />
+        <div className={`w-full flex ${horizontalAlignment}`}>
+            <img
+                src={image.path}
+                alt={image.alt || 'Story image'}
+                className="rounded-md scene-image max-w-full"
+                style={{
+                    objectFit: 'contain',
+                    maxHeight: '400px'
+                }}
+                onError={(e) => {
+                    e.currentTarget.src = '/api/placeholder-image';
+                    e.currentTarget.alt = 'Image not found';
+                }}
+            />
+        </div>
     );
 };
 
@@ -442,25 +417,28 @@ export default function Scene() {
     );
 
     return (
-        <div className="min-h-screen p-6">
-            <div className="max-w-2xl mx-auto space-y-6">
-                {isDevelopment && (
-                    <div className="fixed top-4 right-4">
-                        <button
-                            onClick={() => navigate('/edit')}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                        >
-                            Open Editor
-                        </button>
-                    </div>
-                )}
+        <div className="min-h-screen flex flex-col p-0 overflow-hidden">
+            {isDevelopment && (
+                <div className="fixed top-4 right-4 z-10">
+                    <button
+                        onClick={() => navigate('/edit')}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                        Open Editor
+                    </button>
+                </div>
+            )}
+
+            {/* Content container - full width for left/right image position, constrained for top/bottom */}
+            <div className={`flex-grow flex flex-col ${
+                selectedImageNode?.image?.path &&
+                (selectedImageNode.image.position === 'left' || selectedImageNode.image.position === 'right')
+                    ? 'w-full h-full' : 'max-w-2xl mx-auto w-full'
+            }`}>
 
                 {/* Top position - display before content */}
                 {selectedImageNode?.image?.path && selectedImageNode.image.position === 'top' && (
-                    <div className="mb-6 flex justify-center" style={{
-                        maxWidth: `${selectedImageNode.image.horizontalStretch || 100}%`,
-                        margin: '0 auto'
-                    }}>
+                    <div className="mb-6 px-4 sm:px-6">
                         {renderImage(selectedImageNode.image)}
                     </div>
                 )}
@@ -468,37 +446,60 @@ export default function Scene() {
                 {/* Left/Right position - wrap content and image in a flex container */}
                 {selectedImageNode?.image?.path &&
                 (selectedImageNode.image.position === 'left' || selectedImageNode.image.position === 'right') ? (
-                    // Flex container for image + content
-                    <div className={`flex items-start gap-6 ${
-                        selectedImageNode.image.position === 'right' ? 'flex-row-reverse' : 'flex-row'
-                    }`}>
-                        {/* Image column - width is determined by horizontal stretch */}
-                        <div className="flex-shrink-0" style={{
-                            width: `${(selectedImageNode.image.horizontalStretch || 100) / 3}%`,
-                            minWidth: '100px',
-                            maxWidth: '50%'
-                        }}>
-                            {renderImage(selectedImageNode.image)}
+                    // Flex container for image + content with adjustable padding
+                    <div className={`flex flex-col sm:flex-row min-h-screen 
+                                    /* ADJUSTABLE PADDING: Change these values to modify the space between image and screen edge */
+                                    px-4 sm:px-16 md:px-24 lg:px-32
+                                    ${selectedImageNode.image.position === 'right' ? 'sm:flex-row-reverse' : 'sm:flex-row'}`}>
+                        {/* Image column - full width on mobile, half on desktop */}
+                        <div className="w-full sm:w-1/2 h-64 sm:h-auto flex-shrink-0 mb-4 sm:mb-0">
+                            {/* Completely different handling for stretch vs natural mode */}
+                            {selectedImageNode.image.fitMode === 'stretch' ? (
+                                /* Stretch container - always fills 100% with no alignment influence */
+                                <div className="h-full w-full">
+                                    <img
+                                        src={selectedImageNode.image.path}
+                                        alt={selectedImageNode.image.alt || 'Story image'}
+                                        className="w-full h-full rounded-md scene-image stretch-image"
+                                        style={{
+                                            objectFit: 'fill'
+                                        }}
+                                        onError={(e) => {
+                                            e.currentTarget.src = '/api/placeholder-image';
+                                            e.currentTarget.alt = 'Image not found';
+                                        }}
+                                    />
+                                </div>
+                            ) : (
+                                /* Natural mode container - respects alignment settings */
+                                <div
+                                    className={`h-full w-full flex flex-col
+                                              ${selectedImageNode.image.alignment === 'start' ? 'justify-start' :
+                                        selectedImageNode.image.alignment === 'end' ? 'justify-end' :
+                                            'justify-center'}`}
+                                >
+                                    {renderImage(selectedImageNode.image)}
+                                </div>
+                            )}
                         </div>
 
-                        {/* Content column - takes remaining space */}
-                        <div className="flex-1 p-6">
-                            {renderContent()}
+                        {/* Content column - always aligned to the top */}
+                        <div className="w-full sm:w-1/2 p-4 sm:p-6 flex flex-col justify-start">
+                            <div className="w-full">
+                                {renderContent()}
+                            </div>
                         </div>
                     </div>
                 ) : (
                     // Normal content without left/right image
-                    <div className="p-6">
+                    <div className="p-4 sm:p-6 flex-grow">
                         {renderContent()}
                     </div>
                 )}
 
                 {/* Bottom position - display after content */}
                 {selectedImageNode?.image?.path && selectedImageNode.image.position === 'bottom' && (
-                    <div className="mt-6 flex justify-center" style={{
-                        maxWidth: `${selectedImageNode.image.horizontalStretch || 100}%`,
-                        margin: '0 auto'
-                    }}>
+                    <div className="mt-6 px-4 sm:px-6">
                         {renderImage(selectedImageNode.image)}
                     </div>
                 )}

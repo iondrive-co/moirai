@@ -31,6 +31,36 @@
   }
 
   .scene-image {
-    @apply shadow-lg border border-gray-700;
+    @apply shadow-lg border border-gray-700 rounded-md;
+  }
+
+  /* Stretch mode image - always fills the entire container */
+  .stretch-image {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    object-fit: fill !important;
+  }
+
+  /* Responsive image handling */
+  @media (max-width: 640px) {
+    .scene-image:not(.stretch-image) {
+      max-height: 300px;
+    }
+  }
+
+  /* Side-by-side layout - ensure proper vertical alignment */
+  @media (min-width: 640px) {
+    .side-image-container {
+      min-height: 400px;
+      display: flex;
+      height: calc(100vh - 2rem); /* Adjust for padding */
+      justify-content: center; /* Center horizontally */
+    }
+
+    /* Ensure images go to the edge */
+    .min-h-screen {
+      min-height: 100vh;
+    }
   }
 }

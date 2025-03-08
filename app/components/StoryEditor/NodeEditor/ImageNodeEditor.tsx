@@ -119,6 +119,19 @@ export const ImageNodeEditor: React.FC<ImageNodeEditorProps> = ({
 
                     <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-300">
+                            Alt Text
+                        </label>
+                        <input
+                            type="text"
+                            value={node.data.image.alt || ''}
+                            onChange={(e) => handleImageChange('alt', e.target.value)}
+                            className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                            placeholder="Descriptive text for screen readers"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-300">
                             Position
                         </label>
                         <select
@@ -133,98 +146,72 @@ export const ImageNodeEditor: React.FC<ImageNodeEditorProps> = ({
                         </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-300">
-                                Horizontal Stretch (%)
-                            </label>
-                            <input
-                                type="number"
-                                min="10"
-                                max="500"
-                                value={node.data.image.horizontalStretch || 100}
-                                onBlur={(e) => {
-                                    // Apply constraints only on blur, allows typing
-                                    const inputValue = parseInt(e.target.value) || 100;
-                                    const boundedValue = Math.max(Math.min(inputValue, 500), 10);
-                                    if (boundedValue !== inputValue) {
-                                        handleImageChange('horizontalStretch', boundedValue);
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // During typing, accept any value
-                                    const inputValue = parseInt(e.target.value);
-                                    if (!isNaN(inputValue)) {
-                                        handleImageChange('horizontalStretch', inputValue);
-                                    }
-                                }}
-                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-300">
-                                Vertical Stretch (%)
-                            </label>
-                            <input
-                                type="number"
-                                min="10"
-                                max="500"
-                                value={node.data.image.verticalStretch || 100}
-                                onBlur={(e) => {
-                                    // Apply constraints only on blur, allows typing
-                                    const inputValue = parseInt(e.target.value) || 100;
-                                    const boundedValue = Math.max(Math.min(inputValue, 500), 10);
-                                    if (boundedValue !== inputValue) {
-                                        handleImageChange('verticalStretch', boundedValue);
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // During typing, accept any value
-                                    const inputValue = parseInt(e.target.value);
-                                    if (!isNaN(inputValue)) {
-                                        handleImageChange('verticalStretch', inputValue);
-                                    }
-                                }}
-                                className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
-                            />
-                        </div>
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-300">
+                            Fit Mode
+                        </label>
+                        <select
+                            value={node.data.image.fitMode || 'natural'}
+                            onChange={(e) => handleImageChange('fitMode', e.target.value as 'natural' | 'stretch')}
+                            className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded"
+                        >
+                            <option value="natural">Natural (preserve aspect ratio)</option>
+                            <option value="stretch">Stretch (fill area completely)</option>
+                        </select>
+                        <p className="text-xs text-gray-400">
+                            How the image should fit in its container
+                        </p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-300">
+                            Alignment
+                        </label>
+                        <select
+                            value={node.data.image.alignment || 'center'}
+                            onChange={(e) => handleImageChange('alignment', e.target.value as 'start' | 'center' | 'end')}
+                            className={`w-full p-2 bg-gray-700 text-white border border-gray-600 rounded ${
+                                node.data.image.fitMode === 'stretch' ? 'opacity-50' : ''
+                            }`}
+                            disabled={node.data.image.fitMode === 'stretch'}
+                        >
+                            {node.data.image.position === 'left' || node.data.image.position === 'right' ? (
+                                <>
+                                    <option value="start">Top</option>
+                                    <option value="center">Center</option>
+                                    <option value="end">Bottom</option>
+                                </>
+                            ) : (
+                                <>
+                                    <option value="start">Left</option>
+                                    <option value="center">Center</option>
+                                    <option value="end">Right</option>
+                                </>
+                            )}
+                        </select>
+                        <p className="text-xs text-gray-400">
+                            {node.data.image.fitMode === 'stretch' ?
+                                'Alignment not applicable in stretch mode' :
+                                node.data.image.position === 'left' || node.data.image.position === 'right' ?
+                                    'How to align the image vertically' :
+                                    'How to align the image horizontally'
+                            }
+                        </p>
                     </div>
 
                     {previewUrl && (
                         <div className="mt-4 p-4 bg-gray-900 rounded border border-gray-600">
                             <p className="text-sm text-gray-300 mb-2">Image Preview:</p>
-                            <div className="flex justify-center items-center overflow-hidden" style={{
-                                position: 'relative',
-                                width: '100%',
-                                height: '12rem'
-                            }}>
-                                <div style={{
-                                    width: `${node.data.image.horizontalStretch || 100}%`,
-                                    height: `${node.data.image.verticalStretch || 100}%`,
-                                    maxWidth: '100%',
-                                    maxHeight: '12rem',
-                                    position: 'relative'
-                                }}>
-                                    <img
-                                        key={previewKey}
-                                        src={previewUrl}
-                                        alt={node.data.image.alt || 'Preview'}
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'fill',
-                                        }}
-                                        onError={(e) => {
-                                            e.currentTarget.src = '/api/placeholder-image';
-                                            e.currentTarget.alt = 'Image not found';
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="mt-2 flex items-center justify-between">
-                                <p className="text-xs text-gray-400">Horizontal: {node.data.image.horizontalStretch || 100}%</p>
-                                <p className="text-xs text-gray-400">Vertical: {node.data.image.verticalStretch || 100}%</p>
-                            </div>
+                            <img
+                                key={previewKey}
+                                src={previewUrl}
+                                alt={node.data.image.alt || 'Preview'}
+                                className="max-h-48 mx-auto object-contain"
+                                onError={(e) => {
+                                    e.currentTarget.src = '/api/placeholder-image';
+                                    e.currentTarget.alt = 'Image not found';
+                                }}
+                            />
                         </div>
                     )}
                 </div>

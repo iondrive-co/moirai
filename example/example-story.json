@@ -163,9 +163,11 @@
           "tavern_image": {
             "type": "image",
             "image": {
-              "path": "/api/uploads/tavern1.webp",
+              "path": "/api/uploads/dbdddbdec6a7d93d54d25446a2f337f0.webp",
               "position": "left",
-              "alt": ""
+              "fitMode": "stretch",
+              "alignment": "start",
+              "alt": "A tavern"
             }
           }
         },
@@ -183,10 +185,18 @@
             "y": 950
           },
           "tavern_image": {
+            "x": 851.1900910010111,
+            "y": 951.1900910010113
+          },
+          "image_1740491623557": {
             "x": 850,
             "y": 950
           },
-          "image_1740491623557": {
+          "image_1741335198742": {
+            "x": 850,
+            "y": 950
+          },
+          "image_1741419673066": {
             "x": 850,
             "y": 950
           }

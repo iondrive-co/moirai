@@ -171,17 +171,14 @@ export const ImageNode: React.FC<NodeProps<ImageNodeData>> = ({ data }) => {
                 )}
                 <p className="text-xs text-gray-400">Path: {data.image.path || 'Not set'}</p>
                 <p className="text-xs text-gray-400">Position: {data.image.position}</p>
-                {(data.image.horizontalStretch !== 100 || data.image.verticalStretch !== 100) && (
-                    <p className="text-xs text-gray-400">
-                        Stretch: {data.image.horizontalStretch || 100}% × {data.image.verticalStretch || 100}%
-                    </p>
-                )}
+                <p className="text-xs text-gray-400">Fit: {data.image.fitMode || 'natural'}</p>
+                <p className="text-xs text-gray-400">Align: {data.image.alignment || 'center'}</p>
             </div>
 
             <Handle
                 type="source"
                 position={Position.Bottom}
-                style={{ background: '#555' }}
+                style={{background: '#555'}}
             />
         </div>
     );
