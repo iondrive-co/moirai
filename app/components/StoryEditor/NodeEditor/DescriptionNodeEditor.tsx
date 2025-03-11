@@ -3,7 +3,9 @@ import type {
     StoryNode,
     StoryNodeData,
     DescriptionNodeData,
-    Step
+    Step,
+    TextInsertionPoint,
+    ConditionalBranch
 } from '~/types';
 import { NodeSelect } from './Common';
 import { CollapsiblePanel } from './CollapsiblePanel';
@@ -22,6 +24,43 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                                                                                 availableNodes
                                                                             }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Add a handler for adding new conditional text
+    const addConditionalText = () => {
+        const newPoint: TextInsertionPoint = {
+            id: `condition_${Date.now()}`,
+            variants: [{
+                condition: {
+                    variableName: '',
+                    operator: '==',
+                    value: ''
+                },
+                text: ''
+            }]
+        };
+
+        const currentInsertionPoints = node.data.insertionPoints || [];
+        onUpdateNodeData(node.id, {
+            insertionPoints: [...currentInsertionPoints, newPoint]
+        });
+    };
+
+    // Add a handler for adding new conditional branch
+    const addConditionalBranch = () => {
+        const newBranch: ConditionalBranch = {
+            condition: {
+                variableName: '',
+                operator: '==',
+                value: ''
+            },
+            next: ''
+        };
+
+        const currentBranches = node.data.conditionalBranches || [];
+        onUpdateNodeData(node.id, {
+            conditionalBranches: [...currentBranches, newBranch]
+        });
+    };
 
     return (
         <div className="space-y-6">
@@ -44,6 +83,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                 defaultOpen={false}
                 rightElement={
                     <button
+                        onClick={addConditionalText}
                         className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
                     >
                         Add Condition
@@ -75,6 +115,7 @@ export const DescriptionNodeEditor: React.FC<DescriptionNodeEditorProps> = ({
                 defaultOpen={false}
                 rightElement={
                     <button
+                        onClick={addConditionalBranch}
                         className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
                     >
                         Add Branch
